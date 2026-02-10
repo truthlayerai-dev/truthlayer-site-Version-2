@@ -19,23 +19,19 @@
             <div class="brand-sub">Verify claims fast</div>
           </div>
         </div>
-        <button class="sb-btn" type="button">+ New Pulse</button>
+        <button id="newPulseBtn" class="sb-btn" type="button">+ New Pulse</button>
       </div>
 
       <div class="sb-section">
         <div class="sb-label">RECENT</div>
-        <button class="chat-item active" type="button">
-          <div class="chat-title">Example Pulse</div>
-          <div class="chat-sub">“Arizona is banning…”</div>
-        </button>
-        <button class="chat-item" type="button">
-          <div class="chat-title">Draft</div>
-          <div class="chat-sub">Paste a claim to begin</div>
+        <button class="chat-item active" type="button" disabled>
+          <div class="chat-title">Local Demo</div>
+          <div class="chat-sub">Interactive prototype</div>
         </button>
       </div>
 
       <div class="sb-footer">
-        <div class="tiny">v1 preview • sources-first</div>
+        <div class="tiny">v1 prototype • sources-first</div>
         <a class="tiny link" href="#waitlist">Join early access</a>
       </div>
     </aside>
@@ -49,48 +45,16 @@
         </div>
       </header>
 
-      <section class="chat">
+      <section id="chat" class="chat">
         <div id="how" class="msg sys">
           <div class="bubble">
-            Paste a claim or link. TruthLayer returns a short breakdown, sources, and what’s missing.
+            Paste a claim or link. TruthLayer will return a short breakdown, possible sources, and what’s missing.
           </div>
         </div>
 
-        <div class="msg user">
+        <div class="msg sys">
           <div class="bubble">
-            Arizona is banning all encrypted messaging apps in 2026.
-          </div>
-        </div>
-
-        <div class="msg bot">
-          <div class="bubble">
-            <div class="card">
-              <div class="card-top">
-                <div>
-                  <div class="meta">Verdict</div>
-                  <div class="verdict">Unclear</div>
-                </div>
-                <span class="badge warn">Needs sources</span>
-              </div>
-
-              <div class="meta">Why</div>
-              <ul>
-                <li>No primary source (bill text / executive order) provided.</li>
-                <li>Similar stories often come from misread proposals or unrelated bills.</li>
-                <li>Missing scope (state vs federal), enforcement, and effective date details.</li>
-              </ul>
-
-              <div class="meta">Sources (placeholders)</div>
-              <div class="sources">
-                <a href="#" onclick="return false;">State legislature bill search</a>
-                <a href="#" onclick="return false;">Reputable news coverage</a>
-                <a href="#" onclick="return false;">Civil liberties analysis</a>
-              </div>
-
-              <div class="tip">
-                TruthLayer v1 shows what’s known, what’s missing, and where to look next.
-              </div>
-            </div>
+            Try: “Company X was fined for Y in 2024” or paste a URL.
           </div>
         </div>
 
@@ -104,19 +68,152 @@
               Email for Early Access
             </a>
 
-            <div class="tiny">Replace this with a form later (Tally/Google Form/Beehiiv).</div>
+            <div class="tiny">We’ll replace this with a form later (Tally/Google Form/Beehiiv).</div>
           </div>
         </div>
       </section>
 
       <footer class="composer">
         <div class="input-wrap">
-          <input class="input" placeholder="Paste a claim or URL…" />
-          <button class="send" type="button">Check</button>
+          <input id="claimInput" class="input" placeholder="Paste a claim or URL…" />
+          <button id="checkBtn" class="send" type="button">Check</button>
         </div>
-        <div class="tiny center">TruthLayer is a research assistant, not a judge. Always read sources.</div>
+        <div class="tiny center">Prototype mode: output is simulated. Next step is real sources + citations.</div>
       </footer>
     </main>
   </div>
+
+<script>
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('claimInput');
+  const btn = document.getElementById('checkBtn');
+  const newPulseBtn = document.getElementById('newPulseBtn');
+
+  function esc(str) {
+    return str.replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
+  function addMsg(role, html) {
+    const wrap = document.createElement('div');
+    wrap.className = `msg ${role}`;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = html;
+    wrap.appendChild(bubble);
+
+    // Insert above waitlist if it exists
+    const waitlist = document.getElementById('waitlist');
+    chat.insertBefore(wrap, waitlist);
+
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    return wrap;
+  }
+
+  function addUser(text) {
+    addMsg('user', esc(text));
+  }
+
+  function addBotCard({ verdict, badge, why, sources, tip }) {
+    const whyLis = why.map(x => `<li>${esc(x)}</li>`).join('');
+    const srcLinks = sources.map(s => `<a href="${esc(s.url)}" target="_blank" rel="noreferrer">${esc(s.label)}</a>`).join('');
+    addMsg('bot', `
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <div class="meta">Verdict</div>
+            <div class="verdict">${esc(verdict)}</div>
+          </div>
+          <span class="badge warn">${esc(badge)}</span>
+        </div>
+
+        <div class="meta">Why</div>
+        <ul>${whyLis}</ul>
+
+        <div class="meta">Suggested sources</div>
+        <div class="sources">${srcLinks}</div>
+
+        <div class="tip">${esc(tip)}</div>
+      </div>
+    `);
+  }
+
+  function simulateCheck(claim) {
+    // Very simple heuristic just for demo feel
+    const looksLikeUrl = /^https?:\/\//i.test(claim.trim());
+    const longClaim = claim.trim().length > 120;
+
+    let verdict = 'Unclear';
+    let badge = 'Needs sources';
+    let why = [
+      'No primary source provided (law text, filing, official statement).',
+      'We need date, jurisdiction, and the exact wording of the claim.',
+      'Look for independent confirmation from at least 2 reliable sources.'
+    ];
+
+    if (looksLikeUrl) {
+      verdict = 'Checkable';
+      badge = 'Link detected';
+      why = [
+        'A link makes this verifiable: we can extract the key claim and cross-check it.',
+        'We still need to confirm the publisher, date, and any primary citations.',
+        'Watch for headline-only claims vs what the article actually supports.'
+      ];
+    } else if (longClaim) {
+      verdict = 'Needs narrowing';
+      badge = 'Too broad';
+      why = [
+        'This claim contains multiple sub-claims.',
+        'Split it into one testable statement (who/what/when/where).',
+        'Then verify each part with primary documents or direct reporting.'
+      ];
+    }
+
+    const sources = [
+      { label: 'Official/primary documents (gov, court, filings)', url: 'https://www.usa.gov/' },
+      { label: 'Reputable news coverage (cross-check)', url: 'https://www.reuters.com/' },
+      { label: 'Research/analysis (context, limitations)', url: 'https://scholar.google.com/' }
+    ];
+
+    addBotCard({
+      verdict,
+      badge,
+      why,
+      sources,
+      tip: 'Next step: we wire real citations + a source panel, then add a “save pulse” history.'
+    });
+  }
+
+  function handleSend() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    addUser(text);
+    input.value = '';
+    input.focus();
+
+    // typing indicator
+    const typing = addMsg('sys', '<span style="color: var(--muted);">Analyzing…</span>');
+    setTimeout(() => {
+      typing.remove();
+      simulateCheck(text);
+    }, 600);
+  }
+
+  btn.addEventListener('click', handleSend);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleSend();
+  });
+
+  newPulseBtn.addEventListener('click', () => {
+    // Remove all user/bot messages, keep the first two sys messages + waitlist
+    const nodes = Array.from(chat.querySelectorAll('.msg.user, .msg.bot, .msg.sys:not(:first-child):not(:nth-child(2))'));
+    nodes.forEach(n => n.remove());
+    input.value = '';
+    input.focus();
+    addMsg('sys', '<span style="color: var(--muted);">New Pulse started. Paste a claim.</span>');
+  });
+</script>
 </body>
 </html>
