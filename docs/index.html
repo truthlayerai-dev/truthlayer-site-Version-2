@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TruthLayer</title>
+  <meta name="description" content="Verify claims fast with sources." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sb-top">
+        <div class="brand">
+          <div class="logo-dot"></div>
+          <div>
+            <div class="brand-name">TruthLayer</div>
+            <div class="brand-sub">Verify claims fast</div>
+          </div>
+        </div>
+        <button class="sb-btn" type="button">+ New Pulse</button>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">RECENT</div>
+        <button class="chat-item active" type="button">
+          <div class="chat-title">Example Pulse</div>
+          <div class="chat-sub">“Arizona is banning…”</div>
+        </button>
+        <button class="chat-item" type="button">
+          <div class="chat-title">Draft</div>
+          <div class="chat-sub">Paste a claim to begin</div>
+        </button>
+      </div>
+
+      <div class="sb-footer">
+        <div class="tiny">v1 preview • sources-first</div>
+        <a class="tiny link" href="#waitlist">Join early access</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="top-title">Claim Check</div>
+        <div class="top-actions">
+          <button class="ghost" type="button" onclick="location.hash='how'">How it works</button>
+          <button class="primary" type="button" onclick="location.hash='waitlist'">Early Access</button>
+        </div>
+      </header>
+
+      <section class="chat">
+        <div id="how" class="msg sys">
+          <div class="bubble">
+            Paste a claim or link. TruthLayer returns a short breakdown, sources, and what’s missing.
+          </div>
+        </div>
+
+        <div class="msg user">
+          <div class="bubble">
+            Arizona is banning all encrypted messaging apps in 2026.
+          </div>
+        </div>
+
+        <div class="msg bot">
+          <div class="bubble">
+            <div class="card">
+              <div class="card-top">
+                <div>
+                  <div class="meta">Verdict</div>
+                  <div class="verdict">Unclear</div>
+                </div>
+                <span class="badge warn">Needs sources</span>
+              </div>
+
+              <div class="meta">Why</div>
+              <ul>
+                <li>No primary source (bill text / executive order) provided.</li>
+                <li>Similar stories often come from misread proposals or unrelated bills.</li>
+                <li>Missing scope (state vs federal), enforcement, and effective date details.</li>
+              </ul>
+
+              <div class="meta">Sources (placeholders)</div>
+              <div class="sources">
+                <a href="#" onclick="return false;">State legislature bill search</a>
+                <a href="#" onclick="return false;">Reputable news coverage</a>
+                <a href="#" onclick="return false;">Civil liberties analysis</a>
+              </div>
+
+              <div class="tip">
+                TruthLayer v1 shows what’s known, what’s missing, and where to look next.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="waitlist" class="waitlist">
+          <div class="wl-card">
+            <div class="wl-title">Join early access</div>
+            <div class="wl-sub">Get notified when TruthLayer v1 opens. No spam. Just signal.</div>
+
+            <a class="primary wide"
+               href="mailto:truthlayer.ai@gmail.com?subject=TruthLayer%20Early%20Access&body=Name:%0AEmail:%0AWhat%20do%20you%20want%20to%20verify%20most:%0A">
+              Email for Early Access
+            </a>
+
+            <div class="tiny">Replace this with a form later (Tally/Google Form/Beehiiv).</div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="composer">
+        <div class="input-wrap">
+          <input class="input" placeholder="Paste a claim or URL…" />
+          <button class="send" type="button">Check</button>
+        </div>
+        <div class="tiny center">TruthLayer is a research assistant, not a judge. Always read sources.</div>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
