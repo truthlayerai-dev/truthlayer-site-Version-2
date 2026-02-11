@@ -50,13 +50,16 @@
       <section id="chat" class="chat">
         <div id="how" class="msg sys">
           <div class="bubble">
-            Paste a claim or link. TruthLayer returns a short breakdown, suggested sources, and what’s missing.
+            Paste a claim (and optional links). TruthLayer returns a verdict, a confidence score, and shows the evidence you provided.
           </div>
         </div>
 
         <div class="msg sys">
           <div class="bubble">
-            Example: “Company X was fined for Y in 2024” or paste a URL.
+            Tip: Add 2 links for better confidence. Example:<br/>
+            “X happened because Y…”<br/>
+            https://source1.com<br/>
+            https://source2.com
           </div>
         </div>
 
@@ -80,13 +83,13 @@
           <input id="claimInput" class="input" placeholder="Paste a claim or URL…" autocomplete="off" />
           <button id="checkBtn" class="send" type="button">Check</button>
         </div>
-        <div class="tiny center">Prototype mode: score is demo logic until we wire real citations.</div>
+        <div class="tiny center">Prototype mode: evidence is what YOU paste. Step 2 will auto-fetch sources + citations.</div>
       </footer>
     </main>
   </div>
 
   <script>
-    console.log("TruthLayer interactive v1 loaded");
+    console.log("TruthLayer interactive v2 loaded");
 
     const chat = document.getElementById('chat');
     const input = document.getElementById('claimInput');
@@ -122,55 +125,78 @@
       addMsg('user', esc(text));
     }
 
+    function extractUrls(text) {
+      const urls = text.match(/https?:\/\/[^\s)]+/g) || [];
+      // trim trailing punctuation and de-dupe
+      const cleaned = urls.map(u => u.replace(/[.,;!?]+$/, ''));
+      return Array.from(new Set(cleaned));
+    }
+
     function verdictFromScore(score) {
-      if (score >= 75) return { verdict: "Likely true", badge: "Good support" };
-      if (score >= 45) return { verdict: "Mixed / uncertain", badge: "Needs cross-checks" };
+      if (score >= 80) return { verdict: "Likely true", badge: "Strong support" };
+      if (score >= 55) return { verdict: "Mixed / uncertain", badge: "Some support" };
       return { verdict: "Unclear / likely false", badge: "Weak support" };
     }
 
-    function estimateScore(claim) {
-      // Demo heuristics (no web yet). This is ONLY to power the UX.
+    function estimateScore(claim, urls) {
+      // Demo scoring (no web yet): varies with specificity + number of links
       const t = claim.trim();
-      const looksLikeUrl = /^https?:\/\//i.test(t);
+      const len = t.length;
+
       const hasNumbers = /\d/.test(t);
       const hasDateWord = /\b(20\d{2}|19\d{2}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(t);
-      const hasSpecifics = t.length >= 35 && (hasNumbers || hasDateWord);
+      const absolutist = /\b(always|never|everyone|no one|100%)\b/i.test(t);
 
-      let score = 35;
-      if (looksLikeUrl) score += 25;
-      if (hasSpecifics) score += 20;
-      if (t.length > 180) score -= 10;
-      if (/always|never|everyone|no one|100%/i.test(t)) score -= 10;
+      let score = 20;
+
+      // length adds up to +25
+      score += Math.min(25, Math.floor(len / 8));
+
+      // specifics help
+      if (hasNumbers) score += 10;
+      if (hasDateWord) score += 8;
+
+      // evidence links boost hard
+      if (urls.length === 1) score += 25;
+      if (urls.length >= 2) score += 35;
+
+      // penalties
+      if (len > 220) score -= 10;
+      if (absolutist) score -= 8;
 
       score = Math.max(5, Math.min(95, score));
       return score;
     }
 
-    function buildWhy(claim, score) {
-      const t = claim.trim();
-      const looksLikeUrl = /^https?:\/\//i.test(t);
-      const whys = [];
+    function buildWhy(claim, score, urls) {
+      const why = [];
 
-      if (looksLikeUrl) {
-        whys.push("A link makes this checkable: extract the key claim and verify it against primary sources.");
-        whys.push("Confirm publisher credibility, publication date, and any primary citations in the article.");
+      if (urls.length === 0) {
+        why.push("No evidence links were provided, so this is unverified by default.");
+        why.push("Add at least 1 source URL (official doc or reputable reporting) to raise confidence.");
       } else {
-        whys.push("No link provided, so we need primary documents or credible reporting to verify.");
-        whys.push("Add specifics (who/what/when/where) to make the claim testable.");
+        why.push(`You provided ${urls.length} evidence link${urls.length>1?'s':''}. Next step is cross-checking them.`);
+        why.push("Strongest evidence is primary documentation (gov/court/filings) or direct statements in context.");
+        if (urls.length === 1) why.push("One source can be wrong — aim for at least 2 independent confirmations.");
       }
 
-      if (score < 45) whys.push("Right now this is under-supported—treat it as unverified until you can cite sources.");
-      if (score >= 75) whys.push("This is phrased in a verifiable way—good chance we can confirm quickly once sources are pulled.");
+      if (score < 55) why.push("Confidence is low because the claim is still missing independent confirmation or specific details.");
+      if (score >= 80) why.push("This is formatted in a verifiable way and includes sources—good candidate for confirmation.");
 
-      whys.push("What would change the verdict: an official document, a direct quote in context, or independent confirmation from multiple reputable outlets.");
-      return whys;
+      why.push("What would change the verdict: a primary document, multiple independent confirmations, or a debunk from a high-quality source.");
+      return why;
     }
 
-    function addBotCard({ score, verdict, badge, why, sources }) {
+    function renderEvidence(urls) {
+      if (!urls.length) return `<div class="muted">None provided</div>`;
+      return urls.map(u => `
+        <a href="${esc(u)}" target="_blank" rel="noreferrer">${esc(u)}</a>
+      `).join('');
+    }
+
+    function addBotCard({ score, verdict, badge, why, evidenceUrls }) {
       const whyLis = why.map(x => `<li>${esc(x)}</li>`).join('');
-      const srcLinks = sources.map(s =>
-        `<a href="${esc(s.url)}" target="_blank" rel="noreferrer">${esc(s.label)}</a>`
-      ).join('');
+      const evidence = renderEvidence(evidenceUrls);
 
       addMsg('bot', `
         <div class="card">
@@ -182,37 +208,38 @@
             <span class="badge warn">${esc(badge)}</span>
           </div>
 
-          <div class="meta">Truth score (demo)</div>
-          <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-            <div style="flex:1; height:10px; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:rgba(255,255,255,.02);">
-              <div style="height:100%; width:${score}%; background:rgba(110,231,255,.35);"></div>
+          <div class="meta">Confidence score (prototype)</div>
+          <div class="bar-row">
+            <div class="bar">
+              <div class="bar-fill" style="width:${score}%"></div>
             </div>
-            <div style="min-width:52px; text-align:right; font-weight:800;">${score}%</div>
+            <div class="bar-num">${score}%</div>
           </div>
+
+          <div class="meta">Evidence provided</div>
+          <div class="sources">${evidence}</div>
 
           <div class="meta">Why</div>
           <ul>${whyLis}</ul>
 
-          <div class="meta">Suggested sources</div>
-          <div class="sources">${srcLinks}</div>
-
-          <div class="tip">Next: wire real retrieval so this score is based on citations, not heuristics.</div>
+          <div class="tip">Step 2 will auto-search + fetch sources so evidence isn’t only what users paste.</div>
         </div>
       `);
     }
 
-    function simulateAnswer(claim) {
-      const score = estimateScore(claim);
+    function simulateAnswer(text) {
+      const urls = extractUrls(text);
+      const score = estimateScore(text, urls);
       const v = verdictFromScore(score);
-      const why = buildWhy(claim, score);
+      const why = buildWhy(text, score, urls);
 
-      const sources = [
-        { label: "Primary documents (gov/court/filings)", url: "https://www.usa.gov/" },
-        { label: "Reputable news coverage (cross-check)", url: "https://www.reuters.com/" },
-        { label: "Research / context", url: "https://scholar.google.com/" }
-      ];
-
-      addBotCard({ score, verdict: v.verdict, badge: v.badge, why, sources });
+      addBotCard({
+        score,
+        verdict: v.verdict,
+        badge: v.badge,
+        why,
+        evidenceUrls: urls
+      });
     }
 
     function handleSend() {
@@ -236,14 +263,9 @@
     });
 
     newPulseBtn.addEventListener('click', () => {
-      // Remove all messages after the first two system messages
       const msgs = Array.from(chat.querySelectorAll('.msg'));
-      msgs.forEach((m, idx) => {
-        if (idx < 2) return;
-        m.remove();
-      });
-
-      addMsg('sys', `<span class="muted">New Pulse started. Paste a claim.</span>`);
+      msgs.forEach((m, idx) => { if (idx >= 2) m.remove(); });
+      addMsg('sys', `<span class="muted">New Pulse started. Paste a claim + any links.</span>`);
       input.value = '';
       input.focus();
     });
