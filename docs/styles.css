@@ -16,9 +16,6 @@ body{
   color:var(--text);
 }
 
-/* Make sure clicks work */
-body, .app, .main, .chat, .composer { pointer-events: auto; }
-
 a{color:inherit;text-decoration:none}
 .link{color:var(--accent)}
 .link:hover{text-decoration:underline}
@@ -85,7 +82,7 @@ a{color:inherit;text-decoration:none}
   padding-top:12px;
 }
 
-/* Main */
+/* Main layout */
 .main{
   display:flex;
   flex-direction:column;
@@ -119,7 +116,7 @@ a{color:inherit;text-decoration:none}
 .primary{ background: rgba(110,231,255,.14); }
 .primary.wide{display:block;text-align:center;width:100%}
 
-/* Chat area scrolls; composer stays usable */
+/* Chat scroll area */
 .chat{
   flex:1;
   overflow:auto;
@@ -130,7 +127,7 @@ a{color:inherit;text-decoration:none}
   display:flex;
   flex-direction:column;
   gap:14px;
-  padding-bottom:120px; /* space for composer */
+  padding-bottom:120px;
 }
 
 .msg{display:flex}
@@ -204,11 +201,11 @@ a{color:inherit;text-decoration:none}
 .wl-title{font-weight:900;font-size:18px}
 .wl-sub{color:var(--muted);margin:6px 0 12px}
 
-/* Composer pinned & clickable */
+/* Composer pinned to bottom */
 .composer{
   position:sticky;
   bottom:0;
-  z-index:20;           /* ensures it sits above everything */
+  z-index:20;
   border-top:1px solid var(--line);
   padding:14px 18px;
   background: rgba(11,15,20,.92);
@@ -249,4 +246,5 @@ a{color:inherit;text-decoration:none}
   .app{grid-template-columns: 1fr;}
   .sidebar{display:none;}
 }
+
 
