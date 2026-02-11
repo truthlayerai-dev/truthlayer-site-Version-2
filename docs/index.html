@@ -31,7 +31,7 @@
       </div>
 
       <div class="sb-footer">
-        <div class="tiny">v1 prototype • sources-first</div>
+        <div class="tiny">v1 interactive • sources-first</div>
         <a class="tiny link" href="#waitlist">Join early access</a>
       </div>
     </aside>
@@ -48,7 +48,7 @@
       <section id="chat" class="chat">
         <div id="how" class="msg sys">
           <div class="bubble">
-            Paste a claim or link. TruthLayer will return a short breakdown, possible sources, and what’s missing.
+            Paste a claim or link. TruthLayer returns a short breakdown, suggested sources, and what’s missing.
           </div>
         </div>
 
@@ -58,6 +58,7 @@
           </div>
         </div>
 
+        <!-- Waitlist stays at the bottom of the chat thread -->
         <div id="waitlist" class="waitlist">
           <div class="wl-card">
             <div class="wl-title">Join early access</div>
@@ -75,38 +76,43 @@
 
       <footer class="composer">
         <div class="input-wrap">
-          <input id="claimInput" class="input" placeholder="Paste a claim or URL…" />
+          <input id="claimInput" class="input" placeholder="Paste a claim or URL…" autocomplete="off" />
           <button id="checkBtn" class="send" type="button">Check</button>
         </div>
-        <div class="tiny center">Prototype mode: output is simulated. Next step is real sources + citations.</div>
+        <div class="tiny center">Prototype mode: responses are simulated. Next step: real sources + citations.</div>
       </footer>
     </main>
   </div>
 
 <script>
+  // --- Quick sanity marker so you KNOW you're seeing the latest build ---
+  console.log("TruthLayer interactive v1 loaded");
+
   const chat = document.getElementById('chat');
   const input = document.getElementById('claimInput');
-  const btn = document.getElementById('checkBtn');
+  const checkBtn = document.getElementById('checkBtn');
   const newPulseBtn = document.getElementById('newPulseBtn');
 
   function esc(str) {
-    return str.replace(/[&<>"']/g, m => ({
+    return String(str).replace(/[&<>"']/g, m => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
     }[m]));
   }
 
-  function addMsg(role, html) {
+  function insertAboveWaitlist(node) {
+    const waitlist = document.getElementById('waitlist');
+    chat.insertBefore(node, waitlist);
+  }
+
+  function addMsg(role, innerHTML) {
     const wrap = document.createElement('div');
     wrap.className = `msg ${role}`;
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
-    bubble.innerHTML = html;
+    bubble.innerHTML = innerHTML;
     wrap.appendChild(bubble);
 
-    // Insert above waitlist if it exists
-    const waitlist = document.getElementById('waitlist');
-    chat.insertBefore(wrap, waitlist);
-
+    insertAboveWaitlist(wrap);
     wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
     return wrap;
   }
@@ -117,7 +123,10 @@
 
   function addBotCard({ verdict, badge, why, sources, tip }) {
     const whyLis = why.map(x => `<li>${esc(x)}</li>`).join('');
-    const srcLinks = sources.map(s => `<a href="${esc(s.url)}" target="_blank" rel="noreferrer">${esc(s.label)}</a>`).join('');
+    const srcLinks = sources.map(s =>
+      `<a href="${esc(s.url)}" target="_blank" rel="noreferrer">${esc(s.label)}</a>`
+    ).join('');
+
     addMsg('bot', `
       <div class="card">
         <div class="card-top">
@@ -140,40 +149,40 @@
   }
 
   function simulateCheck(claim) {
-    // Very simple heuristic just for demo feel
-    const looksLikeUrl = /^https?:\/\//i.test(claim.trim());
-    const longClaim = claim.trim().length > 120;
+    const t = claim.trim();
+    const looksLikeUrl = /^https?:\/\//i.test(t);
+    const longClaim = t.length > 140;
 
     let verdict = 'Unclear';
     let badge = 'Needs sources';
     let why = [
       'No primary source provided (law text, filing, official statement).',
-      'We need date, jurisdiction, and the exact wording of the claim.',
-      'Look for independent confirmation from at least 2 reliable sources.'
+      'We need date, jurisdiction, and exact wording to verify properly.',
+      'Cross-check with at least 2 independent, reliable sources.'
     ];
 
     if (looksLikeUrl) {
       verdict = 'Checkable';
       badge = 'Link detected';
       why = [
-        'A link makes this verifiable: we can extract the key claim and cross-check it.',
-        'We still need to confirm the publisher, date, and any primary citations.',
-        'Watch for headline-only claims vs what the article actually supports.'
+        'A link makes the claim verifiable: extract the key statement and cross-check it.',
+        'Confirm publisher credibility, publication date, and primary citations.',
+        'Watch for headline claims vs what the article actually supports.'
       ];
     } else if (longClaim) {
       verdict = 'Needs narrowing';
       badge = 'Too broad';
       why = [
-        'This claim contains multiple sub-claims.',
-        'Split it into one testable statement (who/what/when/where).',
-        'Then verify each part with primary documents or direct reporting.'
+        'This contains multiple sub-claims.',
+        'Split into one testable statement (who/what/when/where).',
+        'Verify each piece separately with primary docs or direct reporting.'
       ];
     }
 
     const sources = [
-      { label: 'Official/primary documents (gov, court, filings)', url: 'https://www.usa.gov/' },
+      { label: 'Primary documents (gov/court/filings)', url: 'https://www.usa.gov/' },
       { label: 'Reputable news coverage (cross-check)', url: 'https://www.reuters.com/' },
-      { label: 'Research/analysis (context, limitations)', url: 'https://scholar.google.com/' }
+      { label: 'Research / context', url: 'https://scholar.google.com/' }
     ];
 
     addBotCard({
@@ -181,7 +190,7 @@
       badge,
       why,
       sources,
-      tip: 'Next step: we wire real citations + a source panel, then add a “save pulse” history.'
+      tip: 'Next: real citations + a right-side source panel + “save pulse” history.'
     });
   }
 
@@ -193,27 +202,36 @@
     input.value = '';
     input.focus();
 
-    // typing indicator
-    const typing = addMsg('sys', '<span style="color: var(--muted);">Analyzing…</span>');
+    const typing = addMsg('sys', `<span class="muted">Analyzing…</span>`);
     setTimeout(() => {
       typing.remove();
       simulateCheck(text);
-    }, 600);
+    }, 500);
   }
 
-  btn.addEventListener('click', handleSend);
+  checkBtn.addEventListener('click', handleSend);
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleSend();
   });
 
   newPulseBtn.addEventListener('click', () => {
-    // Remove all user/bot messages, keep the first two sys messages + waitlist
-    const nodes = Array.from(chat.querySelectorAll('.msg.user, .msg.bot, .msg.sys:not(:first-child):not(:nth-child(2))'));
-    nodes.forEach(n => n.remove());
+    // Remove all user/bot msgs + extra sys msgs, keep the first two sys messages + waitlist
+    const msgs = Array.from(chat.querySelectorAll('.msg'));
+    msgs.forEach((m, idx) => {
+      // keep first 2 system messages
+      if (idx < 2) return;
+      // keep waitlist container (not .msg)
+      if (m.closest('#waitlist')) return;
+      m.remove();
+    });
+
+    addMsg('sys', `<span class="muted">New Pulse started. Paste a claim.</span>`);
     input.value = '';
     input.focus();
-    addMsg('sys', '<span style="color: var(--muted);">New Pulse started. Paste a claim.</span>');
   });
+
+  // Auto-focus input on load
+  window.addEventListener('load', () => input.focus());
 </script>
 </body>
 </html>
