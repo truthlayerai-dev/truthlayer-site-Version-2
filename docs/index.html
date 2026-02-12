@@ -3,103 +3,133 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TruthLayer</title>
-  <meta name="description" content="Verify claims fast with sources." />
+  <title>TruthLayer — Claim Check</title>
+  <meta name="description" content="Verify claims with a sources-first workflow." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
   <div class="app">
     <aside class="sidebar">
-      <div class="sb-top">
-        <div class="brand">
-          <div class="logo-dot"></div>
-          <div>
-            <div class="brand-name">TruthLayer</div>
-            <div class="brand-sub">Fast claim checks</div>
-          </div>
+      <div class="brand">
+        <div class="dot"></div>
+        <div>
+          <div class="brand-name">TruthLayer</div>
+          <div class="brand-sub">Sources-first verification</div>
         </div>
-
-        <button id="newPulseBtn" class="sb-btn" type="button">+ New Pulse</button>
       </div>
 
-      <div class="sb-section">
-        <div class="sb-label">RECENT</div>
-        <button class="chat-item active" type="button" disabled>
-          <div class="chat-title">Local Prototype</div>
-          <div class="chat-sub">Brief results + optional details</div>
-        </button>
+      <button id="newPulseBtn" class="btn primary w100">+ New Pulse</button>
+
+      <div class="panel">
+        <div class="panel-h">Saved Pulses</div>
+        <div id="savedList" class="list"></div>
+        <div class="tiny muted">Saved locally in your browser (prototype).</div>
       </div>
 
-      <div class="sb-footer">
-        <div class="tiny">v1 • prototype</div>
-        <a class="tiny link" href="#early">Early access</a>
+      <div class="panel">
+        <div class="panel-h">How to use</div>
+        <div class="tiny">
+          1) Paste a claim.<br/>
+          2) Optional: add evidence links (one per line).<br/>
+          3) TruthLayer returns a structured “verification plan” + score.<br/><br/>
+          <span class="muted">No auto-citations yet. This version is for workflow + UX.</span>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="tiny muted">v1 static • GitHub Pages</div>
+        <a class="tiny link" href="mailto:truthlayer.ai@gmail.com?subject=TruthLayer%20Early%20Access">truthlayer.ai@gmail.com</a>
       </div>
     </aside>
 
     <main class="main">
       <header class="topbar">
-        <div class="top-title">Claim Check</div>
+        <div>
+          <div class="title">Claim Check</div>
+          <div class="subtitle">Paste claim + optional links. Get a clean verification checklist.</div>
+        </div>
         <div class="top-actions">
-          <button class="ghost" type="button" onclick="location.hash='how'">How it works</button>
-          <button class="primary" type="button" onclick="location.hash='early'">Early Access</button>
+          <button id="exportBtn" class="btn ghost">Copy last result</button>
+          <button id="clearSavedBtn" class="btn danger">Clear saved</button>
         </div>
       </header>
 
       <section id="chat" class="chat">
-        <div id="how" class="msg sys">
-          <div class="bubble">
-            Paste a claim (optionally add links). You’ll get a <b>brief verdict</b> first — details are one click.
-          </div>
-        </div>
-
         <div class="msg sys">
           <div class="bubble">
-            Tip: If you paste links under your claim, TruthLayer will treat them as evidence and raise confidence.
+            <b>Format (recommended)</b><br/>
+            <span class="muted">CLAIM:</span> The U.S. national debt is tracked publicly by the Treasury.<br/>
+            <span class="muted">EVIDENCE:</span><br/>
+            https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny<br/>
+            https://www.usa.gov/debt
           </div>
         </div>
 
-        <div id="early" class="waitlist">
+        <div id="resultsAnchor"></div>
+
+        <div id="waitlist" class="waitlist">
           <div class="wl-card">
             <div class="wl-title">Early access</div>
             <div class="wl-sub">Email and we’ll notify you when v1 goes live.</div>
-            <a class="primary wide"
+            <a class="btn primary w100"
                href="mailto:truthlayer.ai@gmail.com?subject=TruthLayer%20Early%20Access&body=Name:%0AEmail:%0AWhat%20do%20you%20want%20to%20verify%20most:%0A">
-              Email: truthlayer.ai@gmail.com
+              Email for Early Access
             </a>
-            <div class="tiny">We’ll add a form later.</div>
           </div>
         </div>
       </section>
 
       <footer class="composer">
-        <div class="input-wrap">
-          <input id="claimInput" class="input" placeholder="Paste a claim… (optional links below)" autocomplete="off" />
-          <button id="checkBtn" class="send" type="button">Check</button>
+        <div class="input-grid">
+          <div class="field">
+            <div class="label">Claim</div>
+            <textarea id="claimInput" class="textarea" rows="3" placeholder="Paste a claim…"></textarea>
+          </div>
+
+          <div class="field">
+            <div class="label">Evidence links (optional)</div>
+            <textarea id="evidenceInput" class="textarea" rows="3" placeholder="One link per line… (optional)"></textarea>
+          </div>
         </div>
-        <div class="tiny center">Prototype: brief result is based on formatting + evidence you provide. Step 2 adds auto-citations.</div>
+
+        <div class="actions">
+          <button id="checkBtn" class="btn primary">Check</button>
+          <button id="saveBtn" class="btn">Save Pulse</button>
+          <button id="copyBtn" class="btn ghost">Copy result</button>
+        </div>
+
+        <div class="tiny muted center">
+          Prototype: score is based on structure + evidence you provide. This version is designed to feel real without backend.
+        </div>
       </footer>
     </main>
   </div>
 
   <script>
-    console.log("TruthLayer brief-mode v1 loaded");
+    // -----------------------------
+    // TruthLayer v1 (Static-only)
+    // No web fetching, no secrets, no backend.
+    // Focus: clean parsing + verification checklist + local saved pulses.
+    // -----------------------------
 
     const chat = document.getElementById('chat');
-    const input = document.getElementById('claimInput');
+    const claimInput = document.getElementById('claimInput');
+    const evidenceInput = document.getElementById('evidenceInput');
     const checkBtn = document.getElementById('checkBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const clearSavedBtn = document.getElementById('clearSavedBtn');
     const newPulseBtn = document.getElementById('newPulseBtn');
+    const savedList = document.getElementById('savedList');
+
+    let lastResultText = "";
 
     function esc(str) {
       return String(str).replace(/[&<>"']/g, m => ({
         '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
       }[m]));
-    }
-
-    function insertAboveEarly(node) {
-      const early = document.getElementById('early');
-      if (early) chat.insertBefore(node, early);
-      else chat.appendChild(node);
     }
 
     function addMsg(role, innerHTML) {
@@ -110,253 +140,440 @@
       bubble.innerHTML = innerHTML;
       wrap.appendChild(bubble);
 
-      insertAboveEarly(wrap);
+      const waitlist = document.getElementById('waitlist');
+      if (waitlist) chat.insertBefore(wrap, waitlist);
+      else chat.appendChild(wrap);
+
       wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
       return wrap;
     }
 
-    function addUser(text) { addMsg('user', esc(text)); }
-
     function extractUrls(text) {
-      const urls = text.match(/https?:\/\/[^\s)]+/g) || [];
-      const cleaned = urls.map(u => u.replace(/[.,;!?]+$/, ''));
-      return Array.from(new Set(cleaned));
+      const urls = (text.match(/https?:\/\/[^\s)]+/g) || [])
+        .map(u => u.replace(/[.,;!?]+$/, ''))
+        .map(u => u.trim());
+      return Array.from(new Set(urls)).filter(Boolean);
     }
 
-    function stripUrls(text) {
-      return text.replace(/https?:\/\/[^\s)]+/g, '').replace(/\n{3,}/g, '\n\n').trim();
+    function normalizeClaim(rawClaim, rawEvidence) {
+      // If user pasted everything into claim box, pull URLs out into evidence automatically
+      const claimUrls = extractUrls(rawClaim);
+      const evUrls = extractUrls(rawEvidence);
+
+      const mergedEvidence = Array.from(new Set([...evUrls, ...claimUrls]));
+
+      // Remove URLs from claim text
+      let cleanedClaim = rawClaim.replace(/https?:\/\/[^\s)]+/g, '').trim();
+
+      // Remove labels if they used template
+      cleanedClaim = cleanedClaim
+        .replace(/^CLAIM:\s*/i, '')
+        .replace(/^EVIDENCE:\s*/i, '')
+        .trim();
+
+      // If claim got wiped (they only pasted links), set claim to a placeholder
+      if (!cleanedClaim) cleanedClaim = "Link check (no explicit claim text provided).";
+
+      return { claim: cleanedClaim, evidence: mergedEvidence };
     }
 
-    function verdictFromScore(score) {
-      if (score >= 80) return { verdict: "Likely true", badge: "Strong" };
-      if (score >= 55) return { verdict: "Mixed / uncertain", badge: "Some" };
-      return { verdict: "Unclear / likely false", badge: "Weak" };
+    function classifyClaim(claim) {
+      const t = claim.toLowerCase();
+
+      // Very rough buckets (static)
+      if (/(is|are)\s+(true|false)\b/.test(t)) return "binary";
+      if (/(caused|because|leads to|results in)/.test(t)) return "causal";
+      if (/(in \d{4}|on \w+ \d{1,2}|last month|yesterday|today)/.test(t)) return "time-bound";
+      if (/(price|market cap|returns|dividend|yield|inflation|rate|gdp|unemployment|debt)/.test(t)) return "numeric/metric";
+      if (/(said|announced|reported|stated)/.test(t)) return "statement/attribution";
+      return "general";
     }
 
-    function estimateScore(claim, urls) {
-      const t = claim.trim();
-      const len = t.length;
+    function score(claim, evidence) {
+      // Still a prototype score, but more grounded & explainable
+      const len = claim.length;
+      const urls = evidence.length;
+      const hasNumbers = /\d/.test(claim);
+      const hasDate = /\b(20\d{2}|19\d{2}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|yesterday|today|last month)\b/i.test(claim);
+      const absolutist = /\b(always|never|everyone|no one|100%)\b/i.test(claim);
 
-      const hasNumbers = /\d/.test(t);
-      const hasDateWord = /\b(20\d{2}|19\d{2}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(t);
-      const absolutist = /\b(always|never|everyone|no one|100%)\b/i.test(t);
+      let s = 18;
+      s += Math.min(22, Math.floor(len / 10));       // structure
+      if (hasNumbers) s += 10;
+      if (hasDate) s += 8;
 
-      let score = 20;
+      if (urls === 1) s += 22;
+      if (urls >= 2) s += 32;
 
-      // length adds up to +25
-      score += Math.min(25, Math.floor(len / 8));
+      if (absolutist) s -= 8;
+      if (len > 240) s -= 8;
 
-      // specifics
-      if (hasNumbers) score += 10;
-      if (hasDateWord) score += 8;
-
-      // evidence links
-      if (urls.length === 1) score += 25;
-      if (urls.length >= 2) score += 35;
-
-      // penalties
-      if (len > 240) score -= 10;
-      if (absolutist) score -= 8;
-
-      return Math.max(5, Math.min(95, score));
+      s = Math.max(5, Math.min(95, s));
+      return s;
     }
 
-    function briefSummary(claim, urls, score) {
-      // one-liner + one supporting sentence (max 2 lines)
-      const hasLinks = urls.length > 0;
-      const hasSpecifics = /\d/.test(claim) || /\b(20\d{2}|19\d{2})\b/.test(claim);
+    function verdictFrom(s) {
+      if (s >= 82) return { verdict: "Likely true", badge: "Strong structure + evidence" };
+      if (s >= 58) return { verdict: "Mixed / uncertain", badge: "Some support" };
+      return { verdict: "Unclear / unverified", badge: "Weak support" };
+    }
 
-      if (!hasLinks) {
-        return {
-          line1: "No sources provided — this is unverified.",
-          line2: "Add 1–2 credible links (official docs or reputable reporting) to raise confidence."
-        };
+    function buildChecklist(claim, evidence) {
+      const bucket = classifyClaim(claim);
+      const checks = [];
+      const missing = [];
+
+      // Universal checks
+      checks.push("Identify the exact claim being asserted (rewrite in one sentence).");
+      checks.push("Define key terms (what counts, what doesn’t).");
+      checks.push("Check for scope: where, when, and who it applies to.");
+
+      if (bucket === "statement/attribution") {
+        checks.push("Find the original quote in context (full transcript/press release).");
+        checks.push("Confirm the speaker and date, and whether it was paraphrased.");
+        missing.push("Original source quote or transcript link.");
       }
 
-      if (score >= 80) {
-        return {
-          line1: "Looks verifiable and you provided evidence.",
-          line2: "Next: cross-check the links for direct support of the exact claim wording."
-        };
+      if (bucket === "numeric/metric") {
+        checks.push("Confirm the metric definition (units, methodology, revisions).");
+        checks.push("Confirm the timeframe and the latest update timestamp.");
+        checks.push("Cross-check with at least one independent dataset or reputable outlet.");
+        missing.push("Exact metric definition + timeframe.");
       }
 
-      if (!hasSpecifics) {
-        return {
-          line1: "You provided links, but the claim is still a bit vague.",
-          line2: "Add specifics (who/what/when/where) so sources can confirm the same statement."
-        };
+      if (bucket === "time-bound") {
+        checks.push("Confirm the date/time and timezone if relevant.");
+        checks.push("Look for primary documentation from that date (official release / record).");
+        missing.push("Exact date reference + primary doc.");
       }
 
-      return {
-        line1: "Some support based on the evidence you provided.",
-        line2: "To strengthen it, confirm with a primary source or an independent second outlet."
-      };
+      if (bucket === "causal") {
+        checks.push("Separate correlation from causation (look for controlled evidence).");
+        checks.push("List alternative explanations and check if sources address them.");
+        missing.push("Evidence supporting causal mechanism (not just correlation).");
+      }
+
+      if (evidence.length === 0) {
+        missing.unshift("At least 1 credible evidence link (primary doc or reputable reporting).");
+      } else if (evidence.length === 1) {
+        missing.unshift("A second independent source to confirm.");
+      }
+
+      return { bucket, checks, missing };
     }
 
-    function missingInfo(claim, urls) {
-      const misses = [];
-      if (!urls.length) misses.push("At least 1 credible source link");
-      if (!/\d/.test(claim)) misses.push("Numbers or specific details");
-      if (!/\b(20\d{2}|19\d{2})\b/.test(claim)) misses.push("A date/timeframe");
-      if (claim.length < 25) misses.push("Clearer wording (who did what)");
-      return misses;
+    function buildBrief(claim, evidence, s) {
+      if (evidence.length === 0) {
+        return "No sources provided — this is unverified. Add 1–2 credible links (official docs or reputable reporting) to raise confidence.";
+      }
+      if (evidence.length === 1) {
+        return "You provided one source. Next: add an independent confirmation, and verify the source’s claims against primary records.";
+      }
+      if (s >= 82) {
+        return "Good structure + multiple links. Next: cross-check that the links actually support the exact wording of the claim.";
+      }
+      return "Some structure + multiple links. Next: verify scope (date/definition) and check for independent confirmation.";
     }
 
-    function checklist(urls) {
-      const list = [];
-      list.push("Confirm the source is credible (official / reputable).");
-      if (urls.length < 2) list.push("Add a second independent source (avoid single-source confidence).");
-      list.push("Verify the claim appears directly in the source (not implied).");
-      list.push("Check date + context (older article ≠ current status).");
-      return list;
+    function renderEvidenceLinks(urls) {
+      if (!urls.length) return `<div class="muted">None</div>`;
+      return urls.map(u => `
+        <a class="ev" href="${esc(u)}" target="_blank" rel="noreferrer">${esc(u)}</a>
+      `).join('');
     }
 
-    function renderLinks(urls, max = 2) {
-      if (!urls.length) return `<span class="muted">None</span>`;
-      const shown = urls.slice(0, max).map(u => `<a href="${esc(u)}" target="_blank" rel="noreferrer">${esc(u)}</a>`).join('');
-      const more = urls.length > max ? `<div class="muted">+${urls.length - max} more link(s) in details</div>` : '';
-      return shown + more;
+    function renderList(items) {
+      return items.map(x => `<li>${esc(x)}</li>`).join('');
     }
 
-    function addBotCard({ claimText, urls, score }) {
-      const v = verdictFromScore(score);
-      const brief = briefSummary(claimText, urls, score);
-      const miss = missingInfo(claimText, urls);
-      const cl = checklist(urls);
+    function buildResultCard({ claim, evidence, s, verdict, badge, brief, bucket, checks, missing }) {
+      const detailsId = "d_" + Math.random().toString(16).slice(2);
 
-      const whyBrief = `
-        <div class="brief">
-          <div class="brief-line1">${esc(brief.line1)}</div>
-          <div class="brief-line2">${esc(brief.line2)}</div>
-        </div>
-      `;
+      const evidenceHtml = renderEvidenceLinks(evidence);
+      const checksHtml = renderList(checks);
+      const missingHtml = missing.length ? renderList(missing) : `<li>Nothing obvious missing for a first pass.</li>`;
 
-      const missHtml = miss.length
-        ? `<ul>${miss.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
-        : `<div class="muted">Nothing obvious missing.</div>`;
+      // Text used for copy/export
+      lastResultText =
+`TRUTHLAYER — CLAIM CHECK
+Claim: ${claim}
+Verdict: ${verdict} (${s}%)
+Brief: ${brief}
 
-      const clHtml = `<ul>${cl.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+Evidence:
+${evidence.length ? evidence.join("\n") : "None"}
 
-      const id = "d_" + Math.random().toString(16).slice(2);
+Verification checklist:
+- ${checks.join("\n- ")}
 
-      const card = addMsg('bot', `
+Missing info / next inputs:
+- ${missing.length ? missing.join("\n- ") : "None"}
+`;
+
+      return `
         <div class="card">
-          <div class="card-top">
+          <div class="row">
             <div>
-              <div class="meta">Verdict</div>
-              <div class="verdict">${esc(v.verdict)}</div>
+              <div class="meta">Claim</div>
+              <div class="claimText">${esc(claim)}</div>
             </div>
-            <span class="pill">${esc(v.badge)} support</span>
+          </div>
+
+          <div class="row topRow">
+            <div class="left">
+              <div class="meta">Verdict</div>
+              <div class="verdict">${esc(verdict)}</div>
+              <div class="tiny muted">Type: ${esc(bucket)}</div>
+            </div>
+            <div class="right">
+              <span class="badge">${esc(badge)}</span>
+            </div>
           </div>
 
           <div class="meta">Confidence</div>
-          <div class="bar-row">
-            <div class="bar"><div class="bar-fill" style="width:${score}%"></div></div>
-            <div class="bar-num">${score}%</div>
+          <div class="barRow">
+            <div class="bar"><div class="fill" style="width:${s}%"></div></div>
+            <div class="num">${s}%</div>
           </div>
 
           <div class="meta">Brief</div>
-          ${whyBrief}
+          <div class="brief">${esc(brief)}</div>
 
           <div class="meta">Evidence</div>
-          <div class="sources">${renderLinks(urls, 2)}</div>
+          <div class="evidence">${evidenceHtml}</div>
 
-          <div class="actions">
-            <button class="mini" data-toggle="${id}" type="button">Show details</button>
-            <button class="mini" data-copy="1" type="button">Copy</button>
+          <div class="cardActions">
+            <button class="btn mini ghost" data-toggle="${detailsId}">Show details</button>
+            <button class="btn mini" data-copy="1">Copy</button>
+            <button class="btn mini" data-save="1">Save Pulse</button>
           </div>
 
-          <div id="${id}" class="details hidden">
-            <div class="details-grid">
-              <div class="details-box">
-                <div class="meta">Parsed claim</div>
-                <div class="mono">${esc(claimText || "(no claim text detected)")}</div>
-              </div>
-
-              <div class="details-box">
-                <div class="meta">All evidence links</div>
-                <div class="sources">
-                  ${urls.length ? urls.map(u => `<a href="${esc(u)}" target="_blank" rel="noreferrer">${esc(u)}</a>`).join('') : `<span class="muted">None</span>`}
-                </div>
-              </div>
-
-              <div class="details-box">
-                <div class="meta">What’s missing</div>
-                ${missHtml}
-              </div>
-
-              <div class="details-box">
+          <div id="${detailsId}" class="details hidden">
+            <div class="grid2">
+              <div>
                 <div class="meta">Verification checklist</div>
-                ${clHtml}
+                <ul>${checksHtml}</ul>
+              </div>
+              <div>
+                <div class="meta">Missing info</div>
+                <ul>${missingHtml}</ul>
               </div>
             </div>
-
-            <div class="tip">Step 2: TruthLayer will auto-fetch sources + show citations/snippets.</div>
+            <div class="tiny muted">
+              Note: This is a static prototype. “Confidence” reflects structure + evidence count, not automated source verification.
+            </div>
           </div>
         </div>
-      `);
-
-      // Wire buttons inside the last added card
-      const last = card.querySelector('.card');
-      const toggleBtn = last.querySelector('[data-toggle]');
-      const copyBtn = last.querySelector('[data-copy]');
-      const details = last.querySelector('#' + id);
-
-      toggleBtn.addEventListener('click', () => {
-        const isHidden = details.classList.contains('hidden');
-        details.classList.toggle('hidden');
-        toggleBtn.textContent = isHidden ? "Hide details" : "Show details";
-      });
-
-      copyBtn.addEventListener('click', async () => {
-        const text =
-`TruthLayer — ${v.verdict} (${score}%)
-Brief: ${brief.line1} ${brief.line2}
-Evidence: ${urls.length ? urls.join(' | ') : 'None'}
-Claim: ${claimText}`;
-
-        try {
-          await navigator.clipboard.writeText(text);
-          copyBtn.textContent = "Copied";
-          setTimeout(() => (copyBtn.textContent = "Copy"), 900);
-        } catch {
-          copyBtn.textContent = "Copy failed";
-          setTimeout(() => (copyBtn.textContent = "Copy"), 900);
-        }
-      });
+      `;
     }
 
-    function handleSend() {
-      const raw = input.value.trim();
-      if (!raw) return;
+    function runCheck() {
+      const rawClaim = claimInput.value.trim();
+      const rawEvidence = evidenceInput.value.trim();
 
-      addUser(raw);
-      input.value = '';
-      input.focus();
+      if (!rawClaim && !rawEvidence) return;
 
-      const urls = extractUrls(raw);
-      const claimText = stripUrls(raw);
+      // Show user message as a clean block (claim only)
+      const preview = rawClaim ? rawClaim : "(links only)";
+      addMsg('user', esc(preview));
 
       const typing = addMsg('sys', `<span class="muted">Analyzing…</span>`);
+
       setTimeout(() => {
         typing.remove();
-        const score = estimateScore(claimText || raw, urls);
-        addBotCard({ claimText, urls, score });
+
+        const parsed = normalizeClaim(rawClaim, rawEvidence);
+        const s = score(parsed.claim, parsed.evidence);
+        const v = verdictFrom(s);
+        const brief = buildBrief(parsed.claim, parsed.evidence, s);
+        const { bucket, checks, missing } = buildChecklist(parsed.claim, parsed.evidence);
+
+        const card = buildResultCard({
+          claim: parsed.claim,
+          evidence: parsed.evidence,
+          s,
+          verdict: v.verdict,
+          badge: v.badge,
+          brief,
+          bucket,
+          checks,
+          missing
+        });
+
+        addMsg('bot', card);
+
+        // Clear inputs for next run
+        claimInput.value = "";
+        evidenceInput.value = "";
+        claimInput.focus();
       }, 350);
     }
 
-    checkBtn.addEventListener('click', handleSend);
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSend(); });
+    // ---------- Local saved pulses ----------
+    const STORAGE_KEY = "truthlayer_saved_pulses_v1";
 
-    newPulseBtn.addEventListener('click', () => {
+    function loadSaved() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function writeSaved(arr) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    }
+
+    function renderSavedList() {
+      const items = loadSaved();
+      if (!items.length) {
+        savedList.innerHTML = `<div class="tiny muted">No saved pulses yet.</div>`;
+        return;
+      }
+      savedList.innerHTML = items.map((p, i) => `
+        <button class="savedItem" data-open="${i}">
+          <div class="savedTitle">${esc(p.claim.slice(0, 46))}${p.claim.length>46?'…':''}</div>
+          <div class="savedMeta">${esc(p.verdict)} • ${p.score}% • ${p.evidenceCount} link${p.evidenceCount===1?'':'s'}</div>
+        </button>
+      `).join('');
+    }
+
+    function saveCurrentPulse() {
+      if (!lastResultText) return;
+
+      // Parse from lastResultText for quick metadata
+      const claimLine = (lastResultText.match(/^Claim:\s*(.*)$/m) || [,""])[1];
+      const verdictLine = (lastResultText.match(/^Verdict:\s*(.*)\s\(/m) || [,""])[1];
+      const scoreLine = (lastResultText.match(/\((\d+)%\)/m) || [,"0"])[1];
+      const evidenceBlock = (lastResultText.split("Evidence:\n")[1] || "").split("\n\n")[0];
+      const evidenceCount = evidenceBlock.trim() === "None" ? 0 : evidenceBlock.split("\n").filter(Boolean).length;
+
+      const saved = loadSaved();
+      saved.unshift({
+        ts: Date.now(),
+        claim: claimLine || "Saved pulse",
+        verdict: verdictLine || "—",
+        score: Number(scoreLine) || 0,
+        evidenceCount,
+        text: lastResultText
+      });
+
+      // cap to 25
+      writeSaved(saved.slice(0, 25));
+      renderSavedList();
+      addMsg('sys', `<span class="muted">Saved Pulse ✓</span>`);
+    }
+
+    async function copyText(txt) {
+      try {
+        await navigator.clipboard.writeText(txt);
+        addMsg('sys', `<span class="muted">Copied ✓</span>`);
+      } catch {
+        // fallback
+        const ta = document.createElement('textarea');
+        ta.value = txt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        addMsg('sys', `<span class="muted">Copied ✓</span>`);
+      }
+    }
+
+    function newPulse() {
+      // remove all bot/user messages except the first system intro
       const msgs = Array.from(chat.querySelectorAll('.msg'));
-      msgs.forEach((m, idx) => { if (idx >= 2) m.remove(); });
-      addMsg('sys', `<span class="muted">New Pulse started. Paste a claim.</span>`);
-      input.value = '';
-      input.focus();
+      msgs.forEach((m, idx) => { if (idx >= 1) m.remove(); });
+      addMsg('sys', `<span class="muted">New Pulse started.</span>`);
+      claimInput.value = "";
+      evidenceInput.value = "";
+      claimInput.focus();
+    }
+
+    // ---------- Event wiring ----------
+    checkBtn.addEventListener('click', runCheck);
+
+    claimInput.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runCheck();
+    });
+    evidenceInput.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runCheck();
     });
 
-    window.addEventListener('load', () => input.focus());
+    saveBtn.addEventListener('click', saveCurrentPulse);
+    copyBtn.addEventListener('click', () => copyText(lastResultText || "No result yet."));
+    exportBtn.addEventListener('click', () => copyText(lastResultText || "No result yet."));
+    newPulseBtn.addEventListener('click', newPulse);
+
+    clearSavedBtn.addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      renderSavedList();
+      addMsg('sys', `<span class="muted">Saved pulses cleared.</span>`);
+    });
+
+    // Delegate clicks inside chat for card buttons
+    chat.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      // Toggle details
+      const toggleId = btn.getAttribute('data-toggle');
+      if (toggleId) {
+        const el = document.getElementById(toggleId);
+        if (el) el.classList.toggle('hidden');
+        btn.textContent = (btn.textContent.includes("Show")) ? "Hide details" : "Show details";
+        return;
+      }
+
+      if (btn.getAttribute('data-copy')) {
+        copyText(lastResultText || "No result yet.");
+        return;
+      }
+
+      if (btn.getAttribute('data-save')) {
+        saveCurrentPulse();
+        return;
+      }
+
+      const openIdx = btn.getAttribute('data-open');
+      if (openIdx !== null) {
+        const items = loadSaved();
+        const item = items[Number(openIdx)];
+        if (item) {
+          copyText(item.text);
+          addMsg('sys', `<span class="muted">Copied saved pulse to clipboard.</span>`);
+        }
+      }
+    });
+
+    // Sidebar saved list open
+    savedList.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-open]');
+      if (!btn) return;
+      const idx = Number(btn.getAttribute('data-open'));
+      const items = loadSaved();
+      const item = items[idx];
+      if (item) {
+        // Show it in chat as a system note + bot card-like summary
+        addMsg('sys', `<span class="muted">Loaded saved pulse</span>`);
+        addMsg('bot', `
+          <div class="card">
+            <div class="meta">Saved Pulse</div>
+            <div class="claimText">${esc(item.claim)}</div>
+            <div class="tiny muted">${esc(item.verdict)} • ${item.score}% • ${item.evidenceCount} link${item.evidenceCount===1?'':'s'}</div>
+            <div class="cardActions">
+              <button class="btn mini" data-copy="1">Copy</button>
+            </div>
+          </div>
+        `);
+        lastResultText = item.text;
+      }
+    });
+
+    // Init
+    renderSavedList();
+    window.addEventListener('load', () => claimInput.focus());
   </script>
 </body>
 </html>
+
