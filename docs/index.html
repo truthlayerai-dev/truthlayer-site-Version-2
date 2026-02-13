@@ -4,7 +4,81 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>TruthLayer — Claim Check</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#0f1620; --text:#eaf2ff; --muted:#9fb6c6; --line:#1b2a3a; --accent:#6ee7ff;
+      --good:#2ee59d; --mid:#ffd36e; --bad:#ff6e6e; --shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1000px 600px at 10% 0%, rgba(110,231,255,.10), transparent 55%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(255,211,110,.08), transparent 55%), var(--bg);
+      color:var(--text);
+    }
+    .app{max-width:1100px;margin:0 auto;padding:18px 16px 28px}
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 12px;background: linear-gradient(180deg, rgba(15,22,32,.85), rgba(15,22,32,.55));
+      border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);backdrop-filter:blur(10px);
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:38px;height:38px;border-radius:12px;background:rgba(110,231,255,.18);border:1px solid rgba(110,231,255,.35);
+      display:grid;place-items:center;font-weight:800;letter-spacing:.5px;color:var(--accent)}
+    .name{font-weight:800;font-size:16px}
+    .tag{font-size:12px;color:var(--muted)}
+    .nav{display:flex;gap:10px;align-items:center}
+    .navbtn{border:1px solid var(--line);background:rgba(11,15,20,.35);color:var(--text);padding:8px 12px;border-radius:12px;cursor:pointer;font-weight:600}
+    .navbtn:hover{border-color: rgba(110,231,255,.35)}
+    .grid{margin-top:14px;display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .panel{background: linear-gradient(180deg, rgba(15,22,32,.75), rgba(12,18,26,.65));border:1px solid var(--line);
+      border-radius:18px;box-shadow:var(--shadow);padding:14px}
+    h1,h2{margin:0;font-size:18px}
+    p{margin:6px 0 0;color:var(--muted);font-size:13px}
+    .composer{margin-top:12px;background:rgba(11,15,20,.35);border:1px solid var(--line);border-radius:16px;padding:12px}
+    .label{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:rgba(159,182,198,.9);margin:10px 0 6px}
+    textarea{
+      width:100%;border-radius:14px;border:1px solid rgba(27,42,58,.9);background:rgba(10,14,20,.55);
+      color:var(--text);padding:10px 12px;outline:none;resize:vertical;min-height:44px;line-height:1.35;
+    }
+    textarea:focus{border-color:rgba(110,231,255,.45);box-shadow:0 0 0 3px rgba(110,231,255,.10)}
+    .actions{margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{border:1px solid var(--line);background:rgba(11,15,20,.25);color:var(--text);padding:10px 14px;border-radius:14px;cursor:pointer;font-weight:700}
+    .btn:hover{border-color: rgba(110,231,255,.35)}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .btn.primary{background:rgba(110,231,255,.16);border-color:rgba(110,231,255,.35);color:var(--accent)}
+    .hint{color:rgba(159,182,198,.9);font-size:12px}
+    .examples{margin-top:12px}
+    .chips{display:flex;flex-wrap:wrap;gap:10px}
+    .chip{border:1px solid var(--line);background:rgba(11,15,20,.25);color:var(--text);padding:8px 10px;border-radius:999px;cursor:pointer;font-weight:650;font-size:12px}
+    .chip:hover{border-color: rgba(110,231,255,.35)}
+    .card{background:rgba(11,15,20,.35);border:1px solid var(--line);border-radius:18px;padding:14px}
+    .empty{border:1px dashed rgba(27,42,58,.9);border-radius:16px;padding:18px;background:rgba(11,15,20,.25)}
+    .emptyTitle{font-weight:800;font-size:14px}
+    .emptyText{color:var(--muted);margin-top:6px;font-size:13px}
+    .k{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:rgba(159,182,198,.9);margin-bottom:4px}
+    .verdict{font-size:20px;font-weight:900}
+    .barRow{display:flex;align-items:center;gap:10px}
+    .bar{flex:1;height:10px;border-radius:999px;background:rgba(27,42,58,.65);overflow:hidden;border:1px solid rgba(27,42,58,.9)}
+    .fill{height:100%;background:linear-gradient(90deg, rgba(110,231,255,.85), rgba(46,229,157,.75));border-radius:999px}
+    .pct{font-weight:900;color:rgba(234,242,255,.9);min-width:42px;text-align:right}
+    .pill{font-size:12px;padding:7px 10px;border-radius:999px;border:1px solid var(--line);font-weight:800}
+    .pill.good{border-color:rgba(46,229,157,.45);color:var(--good);background:rgba(46,229,157,.10)}
+    .pill.mid{border-color:rgba(255,211,110,.45);color:var(--mid);background:rgba(255,211,110,.10)}
+    .pill.bad{border-color:rgba(255,110,110,.45);color:var(--bad);background:rgba(255,110,110,.10)}
+    .rowTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .bullets{margin:8px 0 0;padding-left:18px}
+    .bullets li{margin:6px 0}
+    .cites{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+    .cite{display:block;text-decoration:none;border:1px solid rgba(27,42,58,.9);background:rgba(10,14,20,.35);border-radius:16px;padding:10px 12px;color:var(--text)}
+    .cite:hover{border-color: rgba(110,231,255,.35)}
+    .citeTitle{font-weight:900;margin-bottom:6px}
+    .citeSnippet{color:rgba(234,242,255,.9);font-size:13px;line-height:1.35}
+    .citeUrl{margin-top:8px;color:rgba(159,182,198,.9);font-size:12px;word-break:break-word}
+    .tiny{font-size:12px;color:var(--muted)}
+  </style>
 </head>
 
 <body>
@@ -12,225 +86,138 @@
     <header class="topbar">
       <div class="brand">
         <div class="logo">TL</div>
-        <div class="brandtext">
+        <div>
           <div class="name">TruthLayer</div>
           <div class="tag">Claim Check (v1)</div>
         </div>
       </div>
-
-      <nav class="nav">
-        <button class="navbtn" id="howBtn">How it works</button>
-        <a class="navbtn ghost" href="#early">Early Access</a>
-      </nav>
+      <div class="nav">
+        <a class="navbtn" href="#examples">Examples</a>
+      </div>
     </header>
 
     <main class="grid">
-      <!-- Left: chat-like input -->
       <section class="panel">
-        <div class="panelhead">
+        <div>
           <h1>Claim Check</h1>
-          <p class="muted">Paste a claim. Add links if you have them. We’ll return a verdict + citations.</p>
+          <p>Paste a claim. Optional: add evidence links. We’ll call your Worker and render the result.</p>
         </div>
 
         <div class="composer">
           <label class="label" for="claimInput">Claim</label>
-          <textarea id="claimInput" rows="3" placeholder="Example: The U.S. national debt is tracked publicly by the Treasury."></textarea>
+          <textarea id="claimInput" rows="3" placeholder="Type a claim here..."></textarea>
 
           <label class="label" for="linksInput">Optional evidence links (one per line)</label>
-          <textarea id="linksInput" rows="2" placeholder="https://example.com/source-1
-https://example.com/source-2"></textarea>
+          <textarea id="linksInput" rows="2" placeholder="https://example.com/source-1"></textarea>
 
           <div class="actions">
-            <button id="checkBtn" class="btn primary">Check</button>
-            <button id="clearBtn" class="btn">Clear</button>
-            <div class="hint" id="statusHint">Connected to TruthLayer Worker ✅</div>
+            <button id="checkBtn" class="btn primary" type="button">Check</button>
+            <button id="clearBtn" class="btn" type="button">Clear</button>
+            <div class="hint" id="statusHint">Ready ✅</div>
           </div>
         </div>
 
-        <div class="examples">
+        <div class="examples" id="examples">
           <div class="label">Quick examples</div>
           <div class="chips" id="chips"></div>
         </div>
 
-        <div class="footnote">
-          Prototype note: If SERPER_API_KEY isn’t set yet, you’ll see “Prototype mode” (no auto-citations).
+        <div class="tiny" style="margin-top:12px;">
+          If your Worker doesn’t have SERPER_API_KEY yet, you’ll still get a result, but citations may be empty.
         </div>
       </section>
 
-      <!-- Right: result card -->
       <section class="panel">
-        <div class="panelhead">
+        <div>
           <h2>Result</h2>
-          <p class="muted">Verdict, confidence, why, missing info, and citations.</p>
+          <p>Verdict, confidence, why, missing info, citations.</p>
         </div>
 
-        <div id="result" class="result">
+        <div id="result" style="margin-top:12px;">
           <div class="empty">
-            <div class="emptyTitle">Run your first check</div>
-            <div class="emptyText">Type a claim on the left and hit <b>Check</b>.</div>
-          </div>
-        </div>
-
-        <div id="early" class="early">
-          <div class="earlyCard">
-            <div class="earlyTitle">Early access</div>
-            <div class="earlyText">Drop your email and we’ll notify you when v1 goes live.</div>
-
-            <form id="earlyForm" class="earlyForm">
-              <input id="earlyEmail" type="email" placeholder="you@email.com" required />
-              <button class="btn primary" type="submit">Notify me</button>
-            </form>
-
-            <div class="muted tiny">
-              This uses an email link to <b>truthlayer.ai@gmail.com</b> for now (no database yet).
-            </div>
+            <div class="emptyTitle">Not running yet</div>
+            <div class="emptyText">Type a claim and click <b>Check</b>.</div>
           </div>
         </div>
       </section>
     </main>
-
-    <!-- Modal -->
-    <dialog id="howModal" class="modal">
-      <div class="modalBody">
-        <div class="modalHead">
-          <div class="modalTitle">How TruthLayer v1 works</div>
-          <button class="x" id="closeHow">✕</button>
-        </div>
-        <ul class="list">
-          <li><b>You</b> paste a claim (and optional links).</li>
-          <li><b>Worker API</b> returns a verdict + confidence.</li>
-          <li>If SERPER is enabled, it also returns <b>citations + snippets</b>.</li>
-          <li>We show <b>what’s missing</b> to make the claim testable.</li>
-        </ul>
-        <div class="muted tiny">Next step: add SERPER_API_KEY so citations appear automatically.</div>
-      </div>
-    </dialog>
-
   </div>
 
   <script>
-    // ✅ Your Cloudflare Worker base URL
+    // 🔥 IMPORTANT: your Worker base URL
     const API_BASE = "https://rapid-flower-be72truthlayer.truthlayer-ai.workers.dev";
 
-    const els = {
-      claim: document.getElementById("claimInput"),
-      links: document.getElementById("linksInput"),
-      check: document.getElementById("checkBtn"),
-      clear: document.getElementById("clearBtn"),
-      result: document.getElementById("result"),
-      hint: document.getElementById("statusHint"),
-      chips: document.getElementById("chips"),
-      howBtn: document.getElementById("howBtn"),
-      howModal: document.getElementById("howModal"),
-      closeHow: document.getElementById("closeHow"),
-      earlyForm: document.getElementById("earlyForm"),
-      earlyEmail: document.getElementById("earlyEmail"),
-    };
+    const claimEl = document.getElementById("claimInput");
+    const linksEl = document.getElementById("linksInput");
+    const checkBtn = document.getElementById("checkBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const resultEl = document.getElementById("result");
+    const hintEl = document.getElementById("statusHint");
+    const chipsEl = document.getElementById("chips");
 
     const EXAMPLES = [
-      {
-        label: "Treasury tracks U.S. debt",
-        claim: "The U.S. national debt is tracked publicly by the U.S. Treasury.",
-        links: ""
-      },
-      {
-        label: "Bitcoin supply cap",
-        claim: "Bitcoin has a maximum supply cap of 21 million coins.",
-        links: ""
-      },
-      {
-        label: "Water boils at 100°C",
-        claim: "At sea level, pure water boils at 100°C (212°F).",
-        links: ""
-      },
-      {
-        label: "Arizona capital",
-        claim: "Phoenix is the capital of Arizona.",
-        links: ""
-      },
-      {
-        label: "Add your own link test",
-        claim: "The current U.S. debt is published as a dataset.",
-        links: "https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny"
-      }
+      { label:"Phoenix capital", claim:"Phoenix is the capital of Arizona.", links:"" },
+      { label:"Bitcoin cap", claim:"Bitcoin has a maximum supply cap of 21 million coins.", links:"" },
+      { label:"Water boils", claim:"At sea level, pure water boils at 100°C (212°F).", links:"" },
+      { label:"Debt dataset", claim:"The U.S. debt is published as a public dataset by the Treasury.", links:"https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny" }
     ];
 
-    function mountChips() {
-      els.chips.innerHTML = "";
-      EXAMPLES.forEach(x => {
-        const b = document.createElement("button");
-        b.className = "chip";
-        b.textContent = x.label;
-        b.addEventListener("click", () => {
-          els.claim.value = x.claim;
-          els.links.value = x.links;
-          els.claim.focus();
-        });
-        els.chips.appendChild(b);
-      });
-    }
-
-    function setLoading(isLoading) {
-      els.check.disabled = isLoading;
-      els.clear.disabled = isLoading;
-      els.claim.disabled = isLoading;
-      els.links.disabled = isLoading;
-      els.hint.textContent = isLoading ? "Checking…" : "Connected to TruthLayer Worker ✅";
-    }
-
-    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
-
-    function badgeFor(conf) {
-      if (conf >= 80) return { text: "Strong support", cls: "good" };
-      if (conf >= 55) return { text: "Some support", cls: "mid" };
-      return { text: "Weak support", cls: "bad" };
-    }
-
-    function escapeHtml(str) {
+    function escapeHtml(str){
       return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
 
-    async function checkClaimWithAPI(claim, evidenceLinks) {
-      const res = await fetch(`${API_BASE}/api/check`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ claim, evidence: evidenceLinks })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "API error");
-      return data;
+    function setLoading(on){
+      checkBtn.disabled = on;
+      clearBtn.disabled = on;
+      claimEl.disabled = on;
+      linksEl.disabled = on;
+      hintEl.textContent = on ? "Checking… (10s timeout)" : "Ready ✅";
     }
 
-    function renderResult(data) {
-      const confidence = clamp(Number(data.confidence || 0), 0, 100);
+    function badgeFor(conf){
+      if (conf >= 80) return { text:"Strong support", cls:"good" };
+      if (conf >= 55) return { text:"Some support", cls:"mid" };
+      return { text:"Weak support", cls:"bad" };
+    }
+
+    function renderError(msg){
+      resultEl.innerHTML = `
+        <div class="card">
+          <div class="verdict">Error</div>
+          <div class="tiny" style="margin-top:6px;">${escapeHtml(msg)}</div>
+          <div class="tiny" style="margin-top:10px;">Open DevTools → Console for details.</div>
+        </div>`;
+    }
+
+    function renderResult(data){
+      const confidence = Math.max(0, Math.min(100, Number(data.confidence || 0)));
       const badge = badgeFor(confidence);
 
-      const citations = Array.isArray(data.citations) ? data.citations : [];
       const why = Array.isArray(data.why) ? data.why : [];
       const missing = Array.isArray(data.missing) ? data.missing : [];
+      const citations = Array.isArray(data.citations) ? data.citations : [];
 
-      const citationsHtml = citations.length
-        ? citations.map(c => `
-          <a class="cite" href="${escapeHtml(c.url)}" target="_blank" rel="noopener">
-            <div class="citeTitle">${escapeHtml(c.title || c.url)}</div>
-            ${c.snippet ? `<div class="citeSnippet">${escapeHtml(c.snippet)}</div>` : ""}
-            <div class="citeUrl">${escapeHtml(c.url)}</div>
-          </a>
-        `).join("")
-        : `<div class="muted">No citations returned yet. (If SERPER_API_KEY is not set, this is expected.)</div>`;
+      const list = (arr) => arr.length
+        ? `<ul class="bullets">${arr.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`
+        : `<div class="tiny">None</div>`;
 
-      const list = (arr) =>
-        arr.length ? `<ul class="bullets">${arr.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`
-                  : `<div class="muted">None</div>`;
+      const citesHtml = citations.length
+        ? `<div class="cites">${
+            citations.map(c => `
+              <a class="cite" href="${escapeHtml(c.url)}" target="_blank" rel="noopener">
+                <div class="citeTitle">${escapeHtml(c.title || c.url)}</div>
+                ${c.snippet ? `<div class="citeSnippet">${escapeHtml(c.snippet)}</div>` : ""}
+                <div class="citeUrl">${escapeHtml(c.url)}</div>
+              </a>
+            `).join("")
+          }</div>`
+        : `<div class="tiny">No citations returned. (If SERPER_API_KEY isn’t set, this is expected.)</div>`;
 
-      els.result.innerHTML = `
+      resultEl.innerHTML = `
         <div class="card">
-          <div class="cardTop">
+          <div class="rowTop">
             <div>
               <div class="k">VERDICT</div>
               <div class="verdict">${escapeHtml(data.verdict || "Unclear")}</div>
@@ -238,7 +225,7 @@ https://example.com/source-2"></textarea>
             <div class="pill ${badge.cls}">${badge.text}</div>
           </div>
 
-          <div class="barBlock">
+          <div style="margin-top:12px;">
             <div class="k">CONFIDENCE</div>
             <div class="barRow">
               <div class="bar"><div class="fill" style="width:${confidence}%"></div></div>
@@ -246,107 +233,126 @@ https://example.com/source-2"></textarea>
             </div>
           </div>
 
-          <div class="block">
+          <div style="margin-top:14px;">
             <div class="k">BRIEF</div>
-            <div class="text">${escapeHtml(data.brief || "")}</div>
+            <div style="line-height:1.45;">${escapeHtml(data.brief || "")}</div>
           </div>
 
-          <div class="block">
+          <div style="margin-top:14px;">
             <div class="k">WHY</div>
             ${list(why)}
           </div>
 
-          <div class="block">
+          <div style="margin-top:14px;">
             <div class="k">WHAT’S MISSING</div>
             ${list(missing)}
           </div>
 
-          <div class="block">
+          <div style="margin-top:14px;">
             <div class="k">CITATIONS</div>
-            <div class="cites">${citationsHtml}</div>
+            ${citesHtml}
           </div>
 
-          <div class="tiny muted center">
-            TruthLayer v1: citations come from the Worker. Add SERPER_API_KEY to enable live web results.
+          <div class="tiny" style="margin-top:12px;text-align:center;">
+            Worker: <span style="color:var(--accent)">${escapeHtml(API_BASE)}</span>
           </div>
-        </div>
-      `;
+        </div>`;
     }
 
-    function renderError(msg) {
-      els.result.innerHTML = `
-        <div class="card">
-          <div class="verdict">Error</div>
-          <div class="muted">${escapeHtml(msg)}</div>
-          <div class="tiny muted">If this persists, your Worker might be deployed but missing /api/check.</div>
-        </div>
-      `;
+    async function fetchWithTimeout(url, options, ms = 10000){
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), ms);
+      try{
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        return res;
+      } finally {
+        clearTimeout(id);
+      }
     }
 
-    // Event wiring
-    els.check.addEventListener("click", async () => {
-      const claim = els.claim.value.trim();
-      const evidenceLinks = els.links.value
-        .split("\n")
-        .map(s => s.trim())
-        .filter(Boolean);
+    async function runCheck(){
+      const claim = claimEl.value.trim();
+      const evidence = linksEl.value.split("\n").map(s => s.trim()).filter(Boolean);
 
-      if (!claim) {
+      if(!claim){
         renderError("Type a claim first.");
-        els.claim.focus();
+        claimEl.focus();
         return;
       }
 
       setLoading(true);
-      try {
-        const data = await checkClaimWithAPI(claim, evidenceLinks);
+      console.log("Checking claim:", claim, "evidence:", evidence);
+
+      try{
+        const res = await fetchWithTimeout(`${API_BASE}/api/check`, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ claim, evidence })
+        }, 10000);
+
+        const data = await res.json().catch(() => ({}));
+        console.log("API response:", res.status, data);
+
+        if(!res.ok){
+          throw new Error(data?.error || `API error (${res.status})`);
+        }
+
         renderResult(data);
-      } catch (err) {
-        renderError(String(err));
+      } catch(err){
+        if(String(err).includes("AbortError")){
+          renderError("Timed out after 10 seconds. (Worker not responding / CORS blocked / wrong route)");
+        } else {
+          renderError(String(err));
+        }
       } finally {
         setLoading(false);
       }
-    });
+    }
 
-    els.clear.addEventListener("click", () => {
-      els.claim.value = "";
-      els.links.value = "";
-      els.result.innerHTML = `
+    // Wire buttons
+    checkBtn.addEventListener("click", runCheck);
+    clearBtn.addEventListener("click", () => {
+      claimEl.value = "";
+      linksEl.value = "";
+      resultEl.innerHTML = `
         <div class="empty">
           <div class="emptyTitle">Cleared</div>
-          <div class="emptyText">Drop a claim and hit <b>Check</b>.</div>
-        </div>
-      `;
-      els.claim.focus();
+          <div class="emptyText">Type a claim and click <b>Check</b>.</div>
+        </div>`;
+      claimEl.focus();
     });
 
-    // Enter = check (Ctrl+Enter for newline)
-    els.claim.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+    // Enter runs check (Shift+Enter = newline)
+    claimEl.addEventListener("keydown", (e) => {
+      if(e.key === "Enter" && !e.shiftKey){
         e.preventDefault();
-        els.check.click();
+        runCheck();
       }
     });
 
-    els.howBtn.addEventListener("click", () => els.howModal.showModal());
-    els.closeHow.addEventListener("click", () => els.howModal.close());
-
-    els.earlyForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const email = els.earlyEmail.value.trim();
-      if (!email) return;
-
-      const subject = encodeURIComponent("TruthLayer — Early Access");
-      const body = encodeURIComponent(
-        `Please add me to the TruthLayer early access list.\n\nEmail: ${email}\n\nSent from the TruthLayer v1 site.`
-      );
-
-      // Simple v1: mailto (no backend storage yet)
-      window.location.href = `mailto:truthlayer.ai@gmail.com?subject=${subject}&body=${body}`;
-      els.earlyEmail.value = "";
+    // Examples
+    EXAMPLES.forEach(x => {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = x.label;
+      b.type = "button";
+      b.addEventListener("click", () => {
+        claimEl.value = x.claim;
+        linksEl.value = x.links;
+        claimEl.focus();
+      });
+      chipsEl.appendChild(b);
     });
 
-    mountChips();
+    // Quick health ping indicator (optional)
+    (async () => {
+      try{
+        const r = await fetchWithTimeout(`${API_BASE}/`, {}, 5000);
+        hintEl.textContent = r.ok ? "Ready ✅ (Worker OK)" : "Ready ⚠️ (Worker non-200)";
+      } catch(e){
+        hintEl.textContent = "Ready ⚠️ (Worker unreachable)";
+      }
+    })();
   </script>
 </body>
 </html>
