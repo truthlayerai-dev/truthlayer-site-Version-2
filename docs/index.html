@@ -4,576 +4,349 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>TruthLayer — Claim Check</title>
-  <meta name="description" content="Verify claims with a sources-first workflow." />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
   <div class="app">
-    <aside class="sidebar">
+    <header class="topbar">
       <div class="brand">
-        <div class="dot"></div>
-        <div>
-          <div class="brand-name">TruthLayer</div>
-          <div class="brand-sub">Sources-first verification</div>
+        <div class="logo">TL</div>
+        <div class="brandtext">
+          <div class="name">TruthLayer</div>
+          <div class="tag">Claim Check (v1)</div>
         </div>
       </div>
 
-      <button id="newPulseBtn" class="btn primary w100">+ New Pulse</button>
+      <nav class="nav">
+        <button class="navbtn" id="howBtn">How it works</button>
+        <a class="navbtn ghost" href="#early">Early Access</a>
+      </nav>
+    </header>
 
-      <div class="panel">
-        <div class="panel-h">Saved Pulses</div>
-        <div id="savedList" class="list"></div>
-        <div class="tiny muted">Saved locally in your browser (prototype).</div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-h">How to use</div>
-        <div class="tiny">
-          1) Paste a claim.<br/>
-          2) Optional: add evidence links (one per line).<br/>
-          3) TruthLayer returns a structured “verification plan” + score.<br/><br/>
-          <span class="muted">No auto-citations yet. This version is for workflow + UX.</span>
+    <main class="grid">
+      <!-- Left: chat-like input -->
+      <section class="panel">
+        <div class="panelhead">
+          <h1>Claim Check</h1>
+          <p class="muted">Paste a claim. Add links if you have them. We’ll return a verdict + citations.</p>
         </div>
-      </div>
 
-      <div class="footer">
-        <div class="tiny muted">v1 static • GitHub Pages</div>
-        <a class="tiny link" href="mailto:truthlayer.ai@gmail.com?subject=TruthLayer%20Early%20Access">truthlayer.ai@gmail.com</a>
-      </div>
-    </aside>
+        <div class="composer">
+          <label class="label" for="claimInput">Claim</label>
+          <textarea id="claimInput" rows="3" placeholder="Example: The U.S. national debt is tracked publicly by the Treasury."></textarea>
 
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <div class="title">Claim Check</div>
-          <div class="subtitle">Paste claim + optional links. Get a clean verification checklist.</div>
-        </div>
-        <div class="top-actions">
-          <button id="exportBtn" class="btn ghost">Copy last result</button>
-          <button id="clearSavedBtn" class="btn danger">Clear saved</button>
-        </div>
-      </header>
+          <label class="label" for="linksInput">Optional evidence links (one per line)</label>
+          <textarea id="linksInput" rows="2" placeholder="https://example.com/source-1
+https://example.com/source-2"></textarea>
 
-      <section id="chat" class="chat">
-        <div class="msg sys">
-          <div class="bubble">
-            <b>Format (recommended)</b><br/>
-            <span class="muted">CLAIM:</span> The U.S. national debt is tracked publicly by the Treasury.<br/>
-            <span class="muted">EVIDENCE:</span><br/>
-            https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny<br/>
-            https://www.usa.gov/debt
+          <div class="actions">
+            <button id="checkBtn" class="btn primary">Check</button>
+            <button id="clearBtn" class="btn">Clear</button>
+            <div class="hint" id="statusHint">Connected to TruthLayer Worker ✅</div>
           </div>
         </div>
 
-        <div id="resultsAnchor"></div>
+        <div class="examples">
+          <div class="label">Quick examples</div>
+          <div class="chips" id="chips"></div>
+        </div>
 
-        <div id="waitlist" class="waitlist">
-          <div class="wl-card">
-            <div class="wl-title">Early access</div>
-            <div class="wl-sub">Email and we’ll notify you when v1 goes live.</div>
-            <a class="btn primary w100"
-               href="mailto:truthlayer.ai@gmail.com?subject=TruthLayer%20Early%20Access&body=Name:%0AEmail:%0AWhat%20do%20you%20want%20to%20verify%20most:%0A">
-              Email for Early Access
-            </a>
-          </div>
+        <div class="footnote">
+          Prototype note: If SERPER_API_KEY isn’t set yet, you’ll see “Prototype mode” (no auto-citations).
         </div>
       </section>
 
-      <footer class="composer">
-        <div class="input-grid">
-          <div class="field">
-            <div class="label">Claim</div>
-            <textarea id="claimInput" class="textarea" rows="3" placeholder="Paste a claim…"></textarea>
+      <!-- Right: result card -->
+      <section class="panel">
+        <div class="panelhead">
+          <h2>Result</h2>
+          <p class="muted">Verdict, confidence, why, missing info, and citations.</p>
+        </div>
+
+        <div id="result" class="result">
+          <div class="empty">
+            <div class="emptyTitle">Run your first check</div>
+            <div class="emptyText">Type a claim on the left and hit <b>Check</b>.</div>
           </div>
+        </div>
 
-          <div class="field">
-            <div class="label">Evidence links (optional)</div>
-            <textarea id="evidenceInput" class="textarea" rows="3" placeholder="One link per line… (optional)"></textarea>
+        <div id="early" class="early">
+          <div class="earlyCard">
+            <div class="earlyTitle">Early access</div>
+            <div class="earlyText">Drop your email and we’ll notify you when v1 goes live.</div>
+
+            <form id="earlyForm" class="earlyForm">
+              <input id="earlyEmail" type="email" placeholder="you@email.com" required />
+              <button class="btn primary" type="submit">Notify me</button>
+            </form>
+
+            <div class="muted tiny">
+              This uses an email link to <b>truthlayer.ai@gmail.com</b> for now (no database yet).
+            </div>
           </div>
         </div>
-
-        <div class="actions">
-          <button id="checkBtn" class="btn primary">Check</button>
-          <button id="saveBtn" class="btn">Save Pulse</button>
-          <button id="copyBtn" class="btn ghost">Copy result</button>
-        </div>
-
-        <div class="tiny muted center">
-          Prototype: score is based on structure + evidence you provide. This version is designed to feel real without backend.
-        </div>
-      </footer>
+      </section>
     </main>
+
+    <!-- Modal -->
+    <dialog id="howModal" class="modal">
+      <div class="modalBody">
+        <div class="modalHead">
+          <div class="modalTitle">How TruthLayer v1 works</div>
+          <button class="x" id="closeHow">✕</button>
+        </div>
+        <ul class="list">
+          <li><b>You</b> paste a claim (and optional links).</li>
+          <li><b>Worker API</b> returns a verdict + confidence.</li>
+          <li>If SERPER is enabled, it also returns <b>citations + snippets</b>.</li>
+          <li>We show <b>what’s missing</b> to make the claim testable.</li>
+        </ul>
+        <div class="muted tiny">Next step: add SERPER_API_KEY so citations appear automatically.</div>
+      </div>
+    </dialog>
+
   </div>
 
   <script>
-    // -----------------------------
-    // TruthLayer v1 (Static-only)
-    // No web fetching, no secrets, no backend.
-    // Focus: clean parsing + verification checklist + local saved pulses.
-    // -----------------------------
+    // ✅ Your Cloudflare Worker base URL
+    const API_BASE = "https://rapid-flower-be72truthlayer.truthlayer-ai.workers.dev";
 
-    const chat = document.getElementById('chat');
-    const claimInput = document.getElementById('claimInput');
-    const evidenceInput = document.getElementById('evidenceInput');
-    const checkBtn = document.getElementById('checkBtn');
-    const saveBtn = document.getElementById('saveBtn');
-    const copyBtn = document.getElementById('copyBtn');
-    const exportBtn = document.getElementById('exportBtn');
-    const clearSavedBtn = document.getElementById('clearSavedBtn');
-    const newPulseBtn = document.getElementById('newPulseBtn');
-    const savedList = document.getElementById('savedList');
+    const els = {
+      claim: document.getElementById("claimInput"),
+      links: document.getElementById("linksInput"),
+      check: document.getElementById("checkBtn"),
+      clear: document.getElementById("clearBtn"),
+      result: document.getElementById("result"),
+      hint: document.getElementById("statusHint"),
+      chips: document.getElementById("chips"),
+      howBtn: document.getElementById("howBtn"),
+      howModal: document.getElementById("howModal"),
+      closeHow: document.getElementById("closeHow"),
+      earlyForm: document.getElementById("earlyForm"),
+      earlyEmail: document.getElementById("earlyEmail"),
+    };
 
-    let lastResultText = "";
-
-    function esc(str) {
-      return String(str).replace(/[&<>"']/g, m => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-      }[m]));
-    }
-
-    function addMsg(role, innerHTML) {
-      const wrap = document.createElement('div');
-      wrap.className = `msg ${role}`;
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-      bubble.innerHTML = innerHTML;
-      wrap.appendChild(bubble);
-
-      const waitlist = document.getElementById('waitlist');
-      if (waitlist) chat.insertBefore(wrap, waitlist);
-      else chat.appendChild(wrap);
-
-      wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      return wrap;
-    }
-
-    function extractUrls(text) {
-      const urls = (text.match(/https?:\/\/[^\s)]+/g) || [])
-        .map(u => u.replace(/[.,;!?]+$/, ''))
-        .map(u => u.trim());
-      return Array.from(new Set(urls)).filter(Boolean);
-    }
-
-    function normalizeClaim(rawClaim, rawEvidence) {
-      // If user pasted everything into claim box, pull URLs out into evidence automatically
-      const claimUrls = extractUrls(rawClaim);
-      const evUrls = extractUrls(rawEvidence);
-
-      const mergedEvidence = Array.from(new Set([...evUrls, ...claimUrls]));
-
-      // Remove URLs from claim text
-      let cleanedClaim = rawClaim.replace(/https?:\/\/[^\s)]+/g, '').trim();
-
-      // Remove labels if they used template
-      cleanedClaim = cleanedClaim
-        .replace(/^CLAIM:\s*/i, '')
-        .replace(/^EVIDENCE:\s*/i, '')
-        .trim();
-
-      // If claim got wiped (they only pasted links), set claim to a placeholder
-      if (!cleanedClaim) cleanedClaim = "Link check (no explicit claim text provided).";
-
-      return { claim: cleanedClaim, evidence: mergedEvidence };
-    }
-
-    function classifyClaim(claim) {
-      const t = claim.toLowerCase();
-
-      // Very rough buckets (static)
-      if (/(is|are)\s+(true|false)\b/.test(t)) return "binary";
-      if (/(caused|because|leads to|results in)/.test(t)) return "causal";
-      if (/(in \d{4}|on \w+ \d{1,2}|last month|yesterday|today)/.test(t)) return "time-bound";
-      if (/(price|market cap|returns|dividend|yield|inflation|rate|gdp|unemployment|debt)/.test(t)) return "numeric/metric";
-      if (/(said|announced|reported|stated)/.test(t)) return "statement/attribution";
-      return "general";
-    }
-
-    function score(claim, evidence) {
-      // Still a prototype score, but more grounded & explainable
-      const len = claim.length;
-      const urls = evidence.length;
-      const hasNumbers = /\d/.test(claim);
-      const hasDate = /\b(20\d{2}|19\d{2}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|yesterday|today|last month)\b/i.test(claim);
-      const absolutist = /\b(always|never|everyone|no one|100%)\b/i.test(claim);
-
-      let s = 18;
-      s += Math.min(22, Math.floor(len / 10));       // structure
-      if (hasNumbers) s += 10;
-      if (hasDate) s += 8;
-
-      if (urls === 1) s += 22;
-      if (urls >= 2) s += 32;
-
-      if (absolutist) s -= 8;
-      if (len > 240) s -= 8;
-
-      s = Math.max(5, Math.min(95, s));
-      return s;
-    }
-
-    function verdictFrom(s) {
-      if (s >= 82) return { verdict: "Likely true", badge: "Strong structure + evidence" };
-      if (s >= 58) return { verdict: "Mixed / uncertain", badge: "Some support" };
-      return { verdict: "Unclear / unverified", badge: "Weak support" };
-    }
-
-    function buildChecklist(claim, evidence) {
-      const bucket = classifyClaim(claim);
-      const checks = [];
-      const missing = [];
-
-      // Universal checks
-      checks.push("Identify the exact claim being asserted (rewrite in one sentence).");
-      checks.push("Define key terms (what counts, what doesn’t).");
-      checks.push("Check for scope: where, when, and who it applies to.");
-
-      if (bucket === "statement/attribution") {
-        checks.push("Find the original quote in context (full transcript/press release).");
-        checks.push("Confirm the speaker and date, and whether it was paraphrased.");
-        missing.push("Original source quote or transcript link.");
+    const EXAMPLES = [
+      {
+        label: "Treasury tracks U.S. debt",
+        claim: "The U.S. national debt is tracked publicly by the U.S. Treasury.",
+        links: ""
+      },
+      {
+        label: "Bitcoin supply cap",
+        claim: "Bitcoin has a maximum supply cap of 21 million coins.",
+        links: ""
+      },
+      {
+        label: "Water boils at 100°C",
+        claim: "At sea level, pure water boils at 100°C (212°F).",
+        links: ""
+      },
+      {
+        label: "Arizona capital",
+        claim: "Phoenix is the capital of Arizona.",
+        links: ""
+      },
+      {
+        label: "Add your own link test",
+        claim: "The current U.S. debt is published as a dataset.",
+        links: "https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny"
       }
+    ];
 
-      if (bucket === "numeric/metric") {
-        checks.push("Confirm the metric definition (units, methodology, revisions).");
-        checks.push("Confirm the timeframe and the latest update timestamp.");
-        checks.push("Cross-check with at least one independent dataset or reputable outlet.");
-        missing.push("Exact metric definition + timeframe.");
-      }
-
-      if (bucket === "time-bound") {
-        checks.push("Confirm the date/time and timezone if relevant.");
-        checks.push("Look for primary documentation from that date (official release / record).");
-        missing.push("Exact date reference + primary doc.");
-      }
-
-      if (bucket === "causal") {
-        checks.push("Separate correlation from causation (look for controlled evidence).");
-        checks.push("List alternative explanations and check if sources address them.");
-        missing.push("Evidence supporting causal mechanism (not just correlation).");
-      }
-
-      if (evidence.length === 0) {
-        missing.unshift("At least 1 credible evidence link (primary doc or reputable reporting).");
-      } else if (evidence.length === 1) {
-        missing.unshift("A second independent source to confirm.");
-      }
-
-      return { bucket, checks, missing };
+    function mountChips() {
+      els.chips.innerHTML = "";
+      EXAMPLES.forEach(x => {
+        const b = document.createElement("button");
+        b.className = "chip";
+        b.textContent = x.label;
+        b.addEventListener("click", () => {
+          els.claim.value = x.claim;
+          els.links.value = x.links;
+          els.claim.focus();
+        });
+        els.chips.appendChild(b);
+      });
     }
 
-    function buildBrief(claim, evidence, s) {
-      if (evidence.length === 0) {
-        return "No sources provided — this is unverified. Add 1–2 credible links (official docs or reputable reporting) to raise confidence.";
-      }
-      if (evidence.length === 1) {
-        return "You provided one source. Next: add an independent confirmation, and verify the source’s claims against primary records.";
-      }
-      if (s >= 82) {
-        return "Good structure + multiple links. Next: cross-check that the links actually support the exact wording of the claim.";
-      }
-      return "Some structure + multiple links. Next: verify scope (date/definition) and check for independent confirmation.";
+    function setLoading(isLoading) {
+      els.check.disabled = isLoading;
+      els.clear.disabled = isLoading;
+      els.claim.disabled = isLoading;
+      els.links.disabled = isLoading;
+      els.hint.textContent = isLoading ? "Checking…" : "Connected to TruthLayer Worker ✅";
     }
 
-    function renderEvidenceLinks(urls) {
-      if (!urls.length) return `<div class="muted">None</div>`;
-      return urls.map(u => `
-        <a class="ev" href="${esc(u)}" target="_blank" rel="noreferrer">${esc(u)}</a>
-      `).join('');
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+    function badgeFor(conf) {
+      if (conf >= 80) return { text: "Strong support", cls: "good" };
+      if (conf >= 55) return { text: "Some support", cls: "mid" };
+      return { text: "Weak support", cls: "bad" };
     }
 
-    function renderList(items) {
-      return items.map(x => `<li>${esc(x)}</li>`).join('');
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
-    function buildResultCard({ claim, evidence, s, verdict, badge, brief, bucket, checks, missing }) {
-      const detailsId = "d_" + Math.random().toString(16).slice(2);
+    async function checkClaimWithAPI(claim, evidenceLinks) {
+      const res = await fetch(`${API_BASE}/api/check`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ claim, evidence: evidenceLinks })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "API error");
+      return data;
+    }
 
-      const evidenceHtml = renderEvidenceLinks(evidence);
-      const checksHtml = renderList(checks);
-      const missingHtml = missing.length ? renderList(missing) : `<li>Nothing obvious missing for a first pass.</li>`;
+    function renderResult(data) {
+      const confidence = clamp(Number(data.confidence || 0), 0, 100);
+      const badge = badgeFor(confidence);
 
-      // Text used for copy/export
-      lastResultText =
-`TRUTHLAYER — CLAIM CHECK
-Claim: ${claim}
-Verdict: ${verdict} (${s}%)
-Brief: ${brief}
+      const citations = Array.isArray(data.citations) ? data.citations : [];
+      const why = Array.isArray(data.why) ? data.why : [];
+      const missing = Array.isArray(data.missing) ? data.missing : [];
 
-Evidence:
-${evidence.length ? evidence.join("\n") : "None"}
+      const citationsHtml = citations.length
+        ? citations.map(c => `
+          <a class="cite" href="${escapeHtml(c.url)}" target="_blank" rel="noopener">
+            <div class="citeTitle">${escapeHtml(c.title || c.url)}</div>
+            ${c.snippet ? `<div class="citeSnippet">${escapeHtml(c.snippet)}</div>` : ""}
+            <div class="citeUrl">${escapeHtml(c.url)}</div>
+          </a>
+        `).join("")
+        : `<div class="muted">No citations returned yet. (If SERPER_API_KEY is not set, this is expected.)</div>`;
 
-Verification checklist:
-- ${checks.join("\n- ")}
+      const list = (arr) =>
+        arr.length ? `<ul class="bullets">${arr.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`
+                  : `<div class="muted">None</div>`;
 
-Missing info / next inputs:
-- ${missing.length ? missing.join("\n- ") : "None"}
-`;
-
-      return `
+      els.result.innerHTML = `
         <div class="card">
-          <div class="row">
+          <div class="cardTop">
             <div>
-              <div class="meta">Claim</div>
-              <div class="claimText">${esc(claim)}</div>
+              <div class="k">VERDICT</div>
+              <div class="verdict">${escapeHtml(data.verdict || "Unclear")}</div>
+            </div>
+            <div class="pill ${badge.cls}">${badge.text}</div>
+          </div>
+
+          <div class="barBlock">
+            <div class="k">CONFIDENCE</div>
+            <div class="barRow">
+              <div class="bar"><div class="fill" style="width:${confidence}%"></div></div>
+              <div class="pct">${confidence}%</div>
             </div>
           </div>
 
-          <div class="row topRow">
-            <div class="left">
-              <div class="meta">Verdict</div>
-              <div class="verdict">${esc(verdict)}</div>
-              <div class="tiny muted">Type: ${esc(bucket)}</div>
-            </div>
-            <div class="right">
-              <span class="badge">${esc(badge)}</span>
-            </div>
+          <div class="block">
+            <div class="k">BRIEF</div>
+            <div class="text">${escapeHtml(data.brief || "")}</div>
           </div>
 
-          <div class="meta">Confidence</div>
-          <div class="barRow">
-            <div class="bar"><div class="fill" style="width:${s}%"></div></div>
-            <div class="num">${s}%</div>
+          <div class="block">
+            <div class="k">WHY</div>
+            ${list(why)}
           </div>
 
-          <div class="meta">Brief</div>
-          <div class="brief">${esc(brief)}</div>
-
-          <div class="meta">Evidence</div>
-          <div class="evidence">${evidenceHtml}</div>
-
-          <div class="cardActions">
-            <button class="btn mini ghost" data-toggle="${detailsId}">Show details</button>
-            <button class="btn mini" data-copy="1">Copy</button>
-            <button class="btn mini" data-save="1">Save Pulse</button>
+          <div class="block">
+            <div class="k">WHAT’S MISSING</div>
+            ${list(missing)}
           </div>
 
-          <div id="${detailsId}" class="details hidden">
-            <div class="grid2">
-              <div>
-                <div class="meta">Verification checklist</div>
-                <ul>${checksHtml}</ul>
-              </div>
-              <div>
-                <div class="meta">Missing info</div>
-                <ul>${missingHtml}</ul>
-              </div>
-            </div>
-            <div class="tiny muted">
-              Note: This is a static prototype. “Confidence” reflects structure + evidence count, not automated source verification.
-            </div>
+          <div class="block">
+            <div class="k">CITATIONS</div>
+            <div class="cites">${citationsHtml}</div>
+          </div>
+
+          <div class="tiny muted center">
+            TruthLayer v1: citations come from the Worker. Add SERPER_API_KEY to enable live web results.
           </div>
         </div>
       `;
     }
 
-    function runCheck() {
-      const rawClaim = claimInput.value.trim();
-      const rawEvidence = evidenceInput.value.trim();
-
-      if (!rawClaim && !rawEvidence) return;
-
-      // Show user message as a clean block (claim only)
-      const preview = rawClaim ? rawClaim : "(links only)";
-      addMsg('user', esc(preview));
-
-      const typing = addMsg('sys', `<span class="muted">Analyzing…</span>`);
-
-      setTimeout(() => {
-        typing.remove();
-
-        const parsed = normalizeClaim(rawClaim, rawEvidence);
-        const s = score(parsed.claim, parsed.evidence);
-        const v = verdictFrom(s);
-        const brief = buildBrief(parsed.claim, parsed.evidence, s);
-        const { bucket, checks, missing } = buildChecklist(parsed.claim, parsed.evidence);
-
-        const card = buildResultCard({
-          claim: parsed.claim,
-          evidence: parsed.evidence,
-          s,
-          verdict: v.verdict,
-          badge: v.badge,
-          brief,
-          bucket,
-          checks,
-          missing
-        });
-
-        addMsg('bot', card);
-
-        // Clear inputs for next run
-        claimInput.value = "";
-        evidenceInput.value = "";
-        claimInput.focus();
-      }, 350);
+    function renderError(msg) {
+      els.result.innerHTML = `
+        <div class="card">
+          <div class="verdict">Error</div>
+          <div class="muted">${escapeHtml(msg)}</div>
+          <div class="tiny muted">If this persists, your Worker might be deployed but missing /api/check.</div>
+        </div>
+      `;
     }
 
-    // ---------- Local saved pulses ----------
-    const STORAGE_KEY = "truthlayer_saved_pulses_v1";
+    // Event wiring
+    els.check.addEventListener("click", async () => {
+      const claim = els.claim.value.trim();
+      const evidenceLinks = els.links.value
+        .split("\n")
+        .map(s => s.trim())
+        .filter(Boolean);
 
-    function loadSaved() {
+      if (!claim) {
+        renderError("Type a claim first.");
+        els.claim.focus();
+        return;
+      }
+
+      setLoading(true);
       try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      } catch {
-        return [];
-      }
-    }
-
-    function writeSaved(arr) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-    }
-
-    function renderSavedList() {
-      const items = loadSaved();
-      if (!items.length) {
-        savedList.innerHTML = `<div class="tiny muted">No saved pulses yet.</div>`;
-        return;
-      }
-      savedList.innerHTML = items.map((p, i) => `
-        <button class="savedItem" data-open="${i}">
-          <div class="savedTitle">${esc(p.claim.slice(0, 46))}${p.claim.length>46?'…':''}</div>
-          <div class="savedMeta">${esc(p.verdict)} • ${p.score}% • ${p.evidenceCount} link${p.evidenceCount===1?'':'s'}</div>
-        </button>
-      `).join('');
-    }
-
-    function saveCurrentPulse() {
-      if (!lastResultText) return;
-
-      // Parse from lastResultText for quick metadata
-      const claimLine = (lastResultText.match(/^Claim:\s*(.*)$/m) || [,""])[1];
-      const verdictLine = (lastResultText.match(/^Verdict:\s*(.*)\s\(/m) || [,""])[1];
-      const scoreLine = (lastResultText.match(/\((\d+)%\)/m) || [,"0"])[1];
-      const evidenceBlock = (lastResultText.split("Evidence:\n")[1] || "").split("\n\n")[0];
-      const evidenceCount = evidenceBlock.trim() === "None" ? 0 : evidenceBlock.split("\n").filter(Boolean).length;
-
-      const saved = loadSaved();
-      saved.unshift({
-        ts: Date.now(),
-        claim: claimLine || "Saved pulse",
-        verdict: verdictLine || "—",
-        score: Number(scoreLine) || 0,
-        evidenceCount,
-        text: lastResultText
-      });
-
-      // cap to 25
-      writeSaved(saved.slice(0, 25));
-      renderSavedList();
-      addMsg('sys', `<span class="muted">Saved Pulse ✓</span>`);
-    }
-
-    async function copyText(txt) {
-      try {
-        await navigator.clipboard.writeText(txt);
-        addMsg('sys', `<span class="muted">Copied ✓</span>`);
-      } catch {
-        // fallback
-        const ta = document.createElement('textarea');
-        ta.value = txt;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        addMsg('sys', `<span class="muted">Copied ✓</span>`);
-      }
-    }
-
-    function newPulse() {
-      // remove all bot/user messages except the first system intro
-      const msgs = Array.from(chat.querySelectorAll('.msg'));
-      msgs.forEach((m, idx) => { if (idx >= 1) m.remove(); });
-      addMsg('sys', `<span class="muted">New Pulse started.</span>`);
-      claimInput.value = "";
-      evidenceInput.value = "";
-      claimInput.focus();
-    }
-
-    // ---------- Event wiring ----------
-    checkBtn.addEventListener('click', runCheck);
-
-    claimInput.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runCheck();
-    });
-    evidenceInput.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runCheck();
-    });
-
-    saveBtn.addEventListener('click', saveCurrentPulse);
-    copyBtn.addEventListener('click', () => copyText(lastResultText || "No result yet."));
-    exportBtn.addEventListener('click', () => copyText(lastResultText || "No result yet."));
-    newPulseBtn.addEventListener('click', newPulse);
-
-    clearSavedBtn.addEventListener('click', () => {
-      localStorage.removeItem(STORAGE_KEY);
-      renderSavedList();
-      addMsg('sys', `<span class="muted">Saved pulses cleared.</span>`);
-    });
-
-    // Delegate clicks inside chat for card buttons
-    chat.addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (!btn) return;
-
-      // Toggle details
-      const toggleId = btn.getAttribute('data-toggle');
-      if (toggleId) {
-        const el = document.getElementById(toggleId);
-        if (el) el.classList.toggle('hidden');
-        btn.textContent = (btn.textContent.includes("Show")) ? "Hide details" : "Show details";
-        return;
-      }
-
-      if (btn.getAttribute('data-copy')) {
-        copyText(lastResultText || "No result yet.");
-        return;
-      }
-
-      if (btn.getAttribute('data-save')) {
-        saveCurrentPulse();
-        return;
-      }
-
-      const openIdx = btn.getAttribute('data-open');
-      if (openIdx !== null) {
-        const items = loadSaved();
-        const item = items[Number(openIdx)];
-        if (item) {
-          copyText(item.text);
-          addMsg('sys', `<span class="muted">Copied saved pulse to clipboard.</span>`);
-        }
+        const data = await checkClaimWithAPI(claim, evidenceLinks);
+        renderResult(data);
+      } catch (err) {
+        renderError(String(err));
+      } finally {
+        setLoading(false);
       }
     });
 
-    // Sidebar saved list open
-    savedList.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-open]');
-      if (!btn) return;
-      const idx = Number(btn.getAttribute('data-open'));
-      const items = loadSaved();
-      const item = items[idx];
-      if (item) {
-        // Show it in chat as a system note + bot card-like summary
-        addMsg('sys', `<span class="muted">Loaded saved pulse</span>`);
-        addMsg('bot', `
-          <div class="card">
-            <div class="meta">Saved Pulse</div>
-            <div class="claimText">${esc(item.claim)}</div>
-            <div class="tiny muted">${esc(item.verdict)} • ${item.score}% • ${item.evidenceCount} link${item.evidenceCount===1?'':'s'}</div>
-            <div class="cardActions">
-              <button class="btn mini" data-copy="1">Copy</button>
-            </div>
-          </div>
-        `);
-        lastResultText = item.text;
+    els.clear.addEventListener("click", () => {
+      els.claim.value = "";
+      els.links.value = "";
+      els.result.innerHTML = `
+        <div class="empty">
+          <div class="emptyTitle">Cleared</div>
+          <div class="emptyText">Drop a claim and hit <b>Check</b>.</div>
+        </div>
+      `;
+      els.claim.focus();
+    });
+
+    // Enter = check (Ctrl+Enter for newline)
+    els.claim.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        els.check.click();
       }
     });
 
-    // Init
-    renderSavedList();
-    window.addEventListener('load', () => claimInput.focus());
+    els.howBtn.addEventListener("click", () => els.howModal.showModal());
+    els.closeHow.addEventListener("click", () => els.howModal.close());
+
+    els.earlyForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = els.earlyEmail.value.trim();
+      if (!email) return;
+
+      const subject = encodeURIComponent("TruthLayer — Early Access");
+      const body = encodeURIComponent(
+        `Please add me to the TruthLayer early access list.\n\nEmail: ${email}\n\nSent from the TruthLayer v1 site.`
+      );
+
+      // Simple v1: mailto (no backend storage yet)
+      window.location.href = `mailto:truthlayer.ai@gmail.com?subject=${subject}&body=${body}`;
+      els.earlyEmail.value = "";
+    });
+
+    mountChips();
   </script>
 </body>
 </html>
-
