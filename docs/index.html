@@ -4,26 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>TruthLayer — Claim Check</title>
-
   <style>
     :root{
-      --bg:#0b0f14;
-      --panel:#0f1620;
-      --panel2:#0c121a;
-      --text:#eaf2ff;
-      --muted:#9fb6c6;
-      --line:#1b2a3a;
-      --accent:#6ee7ff;
-      --good:#2ee59d;
-      --mid:#ffd36e;
-      --bad:#ff6e6e;
-      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --bg:#0b0f14; --panel:#0f1620; --text:#eaf2ff; --muted:#9fb6c6; --line:#1b2a3a; --accent:#6ee7ff;
+      --good:#2ee59d; --mid:#ffd36e; --bad:#ff6e6e; --shadow:0 10px 30px rgba(0,0,0,.35);
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
     body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
       color:var(--text);
       background:
         radial-gradient(1000px 600px at 10% 0%, rgba(110,231,255,.10), transparent 55%),
@@ -48,7 +36,7 @@
     }
     .name{font-weight:900;font-size:16px}
     .sub{color:var(--muted);font-size:12px;margin-top:2px}
-    .metaRow{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;align-items:center}
+    .pillrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
     .pill{
       border:1px solid var(--line);
       background: rgba(11,15,20,.30);
@@ -164,18 +152,8 @@
     .citeTitle{font-weight:950;margin-bottom:6px}
     .citeSnippet{font-size:13px;line-height:1.35;color:rgba(234,242,255,.90)}
     .citeUrl{margin-top:8px;font-size:12px;color:rgba(159,182,198,.9);word-break:break-word}
+    code{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
     .tiny{font-size:12px;color:var(--muted)}
-    .warnBox{
-      margin-top:12px;
-      border:1px dashed rgba(255,211,110,.35);
-      background: rgba(255,211,110,.06);
-      border-radius:16px;
-      padding:12px;
-      color:rgba(255,235,200,.95);
-      font-size:12px;
-      line-height:1.4;
-    }
-    code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
   </style>
 </head>
 
@@ -186,93 +164,94 @@
         <div class="logo">TL</div>
         <div>
           <div class="name">TruthLayer</div>
-          <div class="sub">Claim Check • Cloudflare Worker powered</div>
+          <div class="sub">Claim Check • Step 2 (Worker API)</div>
         </div>
       </div>
-      <div class="metaRow">
-        <div class="pill">Build: <strong id="buildId">—</strong></div>
-        <div class="pill">Worker: <strong id="workerId">—</strong></div>
-        <div class="pill">JS: <strong id="jsId">—</strong></div>
+      <div class="pillrow">
+        <div class="pill">Build: <strong id="build">—</strong></div>
+        <div class="pill">Worker: <strong id="worker">—</strong></div>
+        <div class="pill">Health: <strong id="health">—</strong></div>
       </div>
     </div>
 
     <div class="grid">
       <div class="panel">
         <h1>Input</h1>
-        <p>Type a claim, click <b>Check</b>. This build can’t silently fail — it shows status + errors.</p>
+        <p>Type a claim → click <b>Check</b>. This build shows the exact API status + error body.</p>
 
         <div class="box">
-          <label class="label" for="claim">Claim</label>
+          <label class="label">Claim</label>
           <textarea id="claim" rows="3" placeholder="Phoenix is the capital of Arizona."></textarea>
 
-          <label class="label" for="links">Optional evidence links (one per line)</label>
+          <label class="label">Optional evidence links (one per line)</label>
           <textarea id="links" rows="2" placeholder="https://example.com/source"></textarea>
 
           <div class="actions">
             <button id="checkBtn" class="btn primary" type="button">Check</button>
             <button id="clearBtn" class="btn" type="button">Clear</button>
-            <div id="status" class="status">Status: booting…</div>
+            <div id="status" class="status">Status: ready</div>
           </div>
 
           <div class="chips" id="chips"></div>
 
-          <div class="warnBox">
-            If clicking <b>Check</b> does nothing, look at the top pills:
-            <br/>• <b>Build</b> proves you’re seeing the newest code
-            <br/>• <b>JS</b> proves the script is running
-            <br/>• <b>Worker</b> proves the Worker is reachable
+          <div class="tiny" style="margin-top:10px;">
+            If you see <b>405</b>, your Worker is alive but you hit it with the wrong method (must be POST).
+            If you see <b>404</b>, your Worker doesn’t have <code>/api/check</code> deployed.
           </div>
         </div>
       </div>
 
       <div class="panel">
         <h2>Result</h2>
-        <p>Verdict + confidence + why + missing + citations.</p>
+        <p>Verdict + confidence + citations (if SERPER_API_KEY is set).</p>
 
         <div id="result" class="card">
           <div class="k">Waiting</div>
-          <div class="tiny">Type a claim and click <b>Check</b>.</div>
+          <div class="tiny">Run a check to see output.</div>
+        </div>
+
+        <div id="debug" class="card" style="margin-top:12px;">
+          <div class="k">Debug</div>
+          <div class="tiny">Last HTTP status + raw body will appear here.</div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // ======== CONFIG ========
+    // ✅ Put YOUR Worker URL here
     const API_BASE = "https://rapid-flower-be72truthlayer.truthlayer-ai.workers.dev";
-    const BUILD_ID = new Date().toISOString(); // unique per paste/commit
+    const BUILD_ID = new Date().toISOString();
 
-    // ======== DOM ========
-    const elBuild = document.getElementById("buildId");
-    const elWorker = document.getElementById("workerId");
-    const elJs = document.getElementById("jsId");
-    const elStatus = document.getElementById("status");
-    const elClaim = document.getElementById("claim");
-    const elLinks = document.getElementById("links");
-    const elCheck = document.getElementById("checkBtn");
-    const elClear = document.getElementById("clearBtn");
-    const elResult = document.getElementById("result");
-    const elChips = document.getElementById("chips");
+    const buildEl = document.getElementById("build");
+    const workerEl = document.getElementById("worker");
+    const healthEl = document.getElementById("health");
+    const statusEl = document.getElementById("status");
+    const claimEl = document.getElementById("claim");
+    const linksEl = document.getElementById("links");
+    const checkBtn = document.getElementById("checkBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const resultEl = document.getElementById("result");
+    const debugEl = document.getElementById("debug");
+    const chipsEl = document.getElementById("chips");
 
-    // ======== HEARTBEATS ========
-    elBuild.textContent = BUILD_ID;
-    elWorker.textContent = API_BASE;
-    elJs.textContent = "RUNNING ✅";
-    console.log("TruthLayer BUILD:", BUILD_ID);
+    buildEl.textContent = BUILD_ID;
+    workerEl.textContent = API_BASE;
 
-    function setStatus(text){ elStatus.textContent = "Status: " + text; }
-    function setLoading(on){
-      elCheck.disabled = on;
-      elClear.disabled = on;
-      elClaim.disabled = on;
-      elLinks.disabled = on;
-    }
+    const EXAMPLES = [
+      { label:"Phoenix capital", claim:"Phoenix is the capital of Arizona.", links:"" },
+      { label:"Bitcoin cap", claim:"Bitcoin has a maximum supply cap of 21 million coins.", links:"" },
+      { label:"Treasury debt", claim:"The U.S. national debt is tracked publicly by the U.S. Treasury.", links:"" },
+      { label:"Debt link test", claim:"The U.S. debt is published as a public dataset by the Treasury.", links:"https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny" }
+    ];
 
     function esc(s){
       return String(s)
         .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
         .replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
+
+    function setStatus(t){ statusEl.textContent = "Status: " + t; }
 
     function badgeFor(conf){
       if(conf >= 80) return {cls:"good", txt:"Strong support"};
@@ -288,24 +267,28 @@
       } finally { clearTimeout(id); }
     }
 
+    function renderDebug(httpStatus, rawText){
+      debugEl.innerHTML = `
+        <div class="k">Debug</div>
+        <div class="tiny"><b>HTTP:</b> ${esc(String(httpStatus))}</div>
+        <div class="tiny" style="margin-top:8px;"><b>Raw body:</b></div>
+        <pre style="white-space:pre-wrap;margin:8px 0 0;color:rgba(234,242,255,.92);">${esc(rawText || "")}</pre>
+      `;
+    }
+
     function renderError(msg){
-      elResult.innerHTML = `
+      resultEl.innerHTML = `
         <div class="k">Error</div>
         <div class="tiny">${esc(msg)}</div>
-        <div class="tiny" style="margin-top:10px;">
-          Open your Worker URL: <code>${esc(API_BASE)}</code> (it should say ok:true).
-          Then test <code>/api/check</code>.
-        </div>
       `;
     }
 
     function renderResult(data){
-      const confidence = Math.max(0, Math.min(100, Number(data.confidence ?? 0)));
-      const badge = badgeFor(confidence);
-
+      const conf = Math.max(0, Math.min(100, Number(data.confidence ?? 0)));
+      const badge = badgeFor(conf);
+      const citations = Array.isArray(data.citations) ? data.citations : [];
       const why = Array.isArray(data.why) ? data.why : [];
       const missing = Array.isArray(data.missing) ? data.missing : [];
-      const citations = Array.isArray(data.citations) ? data.citations : [];
 
       const list = (arr) => arr.length
         ? `<ul class="bullets">${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`
@@ -321,9 +304,9 @@
               </a>
             `).join("")
           }</div>`
-        : `<div class="tiny">No citations returned yet. (Expected if SERPER_API_KEY isn’t set.)</div>`;
+        : `<div class="tiny">No citations returned yet (expected if SERPER_API_KEY isn’t set).</div>`;
 
-      elResult.innerHTML = `
+      resultEl.innerHTML = `
         <div class="rowTop">
           <div>
             <div class="k">Verdict</div>
@@ -335,8 +318,8 @@
         <div style="margin-top:12px;">
           <div class="k">Confidence</div>
           <div class="barRow">
-            <div class="bar"><div class="fill" style="width:${confidence}%"></div></div>
-            <div class="pct">${confidence}%</div>
+            <div class="bar"><div class="fill" style="width:${conf}%"></div></div>
+            <div class="pct">${conf}%</div>
           </div>
         </div>
 
@@ -359,83 +342,74 @@
           <div class="k">Citations</div>
           ${cites}
         </div>
-
-        <div class="tiny" style="margin-top:12px;text-align:center;">
-          Build: <code>${esc(BUILD_ID)}</code>
-        </div>
       `;
     }
 
     async function runCheck(){
-      const claim = elClaim.value.trim();
-      const evidence = elLinks.value.split("\n").map(s => s.trim()).filter(Boolean);
-
-      console.log("RUN CHECK", { claim, evidence });
+      const claim = claimEl.value.trim();
+      const evidence = linksEl.value.split("\n").map(s => s.trim()).filter(Boolean);
 
       if(!claim){
         renderError("Type a claim first.");
-        elClaim.focus();
+        claimEl.focus();
         return;
       }
 
-      // PROOF: button click is working
-      setStatus("click received ✅ sending request…");
-      setLoading(true);
+      setStatus("sending POST /api/check…");
 
       try{
         const res = await fetchWithTimeout(`${API_BASE}/api/check`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
           body: JSON.stringify({ claim, evidence })
         }, 10000);
 
-        const data = await res.json().catch(() => ({}));
-        console.log("API RESPONSE", res.status, data);
+        const raw = await res.text();
+        renderDebug(res.status, raw);
+
+        // Parse JSON safely
+        let data = {};
+        try { data = JSON.parse(raw || "{}"); } catch {}
 
         if(!res.ok){
-          throw new Error(data?.error || `API error (${res.status})`);
+          setStatus(`error (HTTP ${res.status})`);
+          renderError(data?.error || `API error (HTTP ${res.status})`);
+          return;
         }
 
-        setStatus("received response ✅");
+        setStatus("ok ✅ response received");
         renderResult(data);
-      } catch (err){
+
+      } catch(err){
         if(String(err).includes("AbortError")){
           setStatus("timeout ❌");
-          renderError("Timed out after 10s. Worker unreachable / blocked / route missing.");
+          renderError("Timed out after 10s. Worker unreachable / blocked.");
+          renderDebug("timeout", String(err));
         } else {
           setStatus("error ❌");
           renderError(String(err));
+          renderDebug("exception", String(err));
         }
-      } finally {
-        setLoading(false);
       }
     }
 
-    // ======== EVENTS ========
-    elCheck.addEventListener("click", runCheck);
-    elClear.addEventListener("click", () => {
-      elClaim.value = "";
-      elLinks.value = "";
-      setStatus("cleared");
-      elResult.innerHTML = `<div class="k">Waiting</div><div class="tiny">Type a claim and click <b>Check</b>.</div>`;
-      elClaim.focus();
+    checkBtn.addEventListener("click", runCheck);
+
+    clearBtn.addEventListener("click", () => {
+      claimEl.value = "";
+      linksEl.value = "";
+      setStatus("ready");
+      resultEl.innerHTML = `<div class="k">Waiting</div><div class="tiny">Run a check to see output.</div>`;
+      debugEl.innerHTML = `<div class="k">Debug</div><div class="tiny">Last HTTP status + raw body will appear here.</div>`;
+      claimEl.focus();
     });
 
-    // Enter runs check (Shift+Enter newline)
-    elClaim.addEventListener("keydown", (e) => {
+    claimEl.addEventListener("keydown", (e) => {
       if(e.key === "Enter" && !e.shiftKey){
         e.preventDefault();
         runCheck();
       }
     });
-
-    // ======== EXAMPLES ========
-    const EXAMPLES = [
-      { label: "Phoenix capital", claim: "Phoenix is the capital of Arizona.", links: "" },
-      { label: "Bitcoin supply cap", claim: "Bitcoin has a maximum supply cap of 21 million coins.", links: "" },
-      { label: "Treasury debt dataset", claim: "The U.S. national debt is tracked publicly by the U.S. Treasury.", links: "" },
-      { label: "Debt link test", claim: "The U.S. debt is published as a public dataset by the Treasury.", links: "https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny" }
-    ];
 
     EXAMPLES.forEach(x => {
       const b = document.createElement("button");
@@ -443,26 +417,25 @@
       b.type = "button";
       b.textContent = x.label;
       b.addEventListener("click", () => {
-        elClaim.value = x.claim;
-        elLinks.value = x.links;
+        claimEl.value = x.claim;
+        linksEl.value = x.links;
         setStatus("example loaded");
-        elClaim.focus();
+        claimEl.focus();
       });
-      elChips.appendChild(b);
+      chipsEl.appendChild(b);
     });
 
-    // ======== Worker health ping ========
+    // Health ping
     (async () => {
       try{
-        setStatus("checking Worker health…");
         const r = await fetchWithTimeout(`${API_BASE}/`, {}, 5000);
-        if(r.ok){
-          setStatus("ready ✅ Worker OK");
-        } else {
-          setStatus("ready ⚠️ Worker non-200");
-        }
-      } catch (e){
-        setStatus("ready ⚠️ Worker unreachable");
+        const t = await r.text();
+        healthEl.textContent = r.ok ? "OK ✅" : `HTTP ${r.status}`;
+        // also stash raw response in debug so you can see it
+        renderDebug(r.status, t);
+      } catch(e){
+        healthEl.textContent = "Unreachable ❌";
+        renderDebug("unreachable", String(e));
       }
     })();
   </script>
