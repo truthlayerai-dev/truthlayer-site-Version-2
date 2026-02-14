@@ -152,8 +152,8 @@
     .citeTitle{font-weight:950;margin-bottom:6px}
     .citeSnippet{font-size:13px;line-height:1.35;color:rgba(234,242,255,.90)}
     .citeUrl{margin-top:8px;font-size:12px;color:rgba(159,182,198,.9);word-break:break-word}
-    code{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
     .tiny{font-size:12px;color:var(--muted)}
+    code{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
   </style>
 </head>
 
@@ -164,20 +164,19 @@
         <div class="logo">TL</div>
         <div>
           <div class="name">TruthLayer</div>
-          <div class="sub">Claim Check • Step 2 (Worker API)</div>
+          <div class="sub">Claim Check • GitHub Pages + Cloudflare Worker</div>
         </div>
       </div>
       <div class="pillrow">
-        <div class="pill">Build: <strong id="build">—</strong></div>
-        <div class="pill">Worker: <strong id="worker">—</strong></div>
-        <div class="pill">Health: <strong id="health">—</strong></div>
+        <div class="pill">Worker: <strong id="workerTxt">—</strong></div>
+        <div class="pill">Health: <strong id="healthTxt">—</strong></div>
       </div>
     </div>
 
     <div class="grid">
       <div class="panel">
         <h1>Input</h1>
-        <p>Type a claim → click <b>Check</b>. This build shows the exact API status + error body.</p>
+        <p>Type a claim → click <b>Check</b>. Works in prototype mode even without SERPER.</p>
 
         <div class="box">
           <label class="label">Claim</label>
@@ -195,15 +194,14 @@
           <div class="chips" id="chips"></div>
 
           <div class="tiny" style="margin-top:10px;">
-            If you see <b>405</b>, your Worker is alive but you hit it with the wrong method (must be POST).
-            If you see <b>404</b>, your Worker doesn’t have <code>/api/check</code> deployed.
+            If you want real web citations: add <code>SERPER_API_KEY</code> in Worker secrets.
           </div>
         </div>
       </div>
 
       <div class="panel">
         <h2>Result</h2>
-        <p>Verdict + confidence + citations (if SERPER_API_KEY is set).</p>
+        <p>Verdict + confidence + citations.</p>
 
         <div id="result" class="card">
           <div class="k">Waiting</div>
@@ -212,20 +210,17 @@
 
         <div id="debug" class="card" style="margin-top:12px;">
           <div class="k">Debug</div>
-          <div class="tiny">Last HTTP status + raw body will appear here.</div>
+          <div class="tiny">HTTP status + raw body will appear here.</div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // ✅ Put YOUR Worker URL here
     const API_BASE = "https://rapid-flower-be72truthlayer.truthlayer-ai.workers.dev";
-    const BUILD_ID = new Date().toISOString();
 
-    const buildEl = document.getElementById("build");
-    const workerEl = document.getElementById("worker");
-    const healthEl = document.getElementById("health");
+    const workerTxt = document.getElementById("workerTxt");
+    const healthTxt = document.getElementById("healthTxt");
     const statusEl = document.getElementById("status");
     const claimEl = document.getElementById("claim");
     const linksEl = document.getElementById("links");
@@ -235,14 +230,12 @@
     const debugEl = document.getElementById("debug");
     const chipsEl = document.getElementById("chips");
 
-    buildEl.textContent = BUILD_ID;
-    workerEl.textContent = API_BASE;
+    workerTxt.textContent = API_BASE;
 
     const EXAMPLES = [
       { label:"Phoenix capital", claim:"Phoenix is the capital of Arizona.", links:"" },
       { label:"Bitcoin cap", claim:"Bitcoin has a maximum supply cap of 21 million coins.", links:"" },
-      { label:"Treasury debt", claim:"The U.S. national debt is tracked publicly by the U.S. Treasury.", links:"" },
-      { label:"Debt link test", claim:"The U.S. debt is published as a public dataset by the Treasury.", links:"https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny" }
+      { label:"Treasury debt", claim:"The U.S. national debt is tracked publicly by the U.S. Treasury.", links:"" }
     ];
 
     function esc(s){
@@ -250,21 +243,19 @@
         .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
         .replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
-
     function setStatus(t){ statusEl.textContent = "Status: " + t; }
+
+    async function fetchWithTimeout(url, options={}, ms=10000){
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), ms);
+      try { return await fetch(url, { ...options, signal: controller.signal }); }
+      finally { clearTimeout(id); }
+    }
 
     function badgeFor(conf){
       if(conf >= 80) return {cls:"good", txt:"Strong support"};
       if(conf >= 55) return {cls:"mid", txt:"Some support"};
       return {cls:"bad", txt:"Weak support"};
-    }
-
-    async function fetchWithTimeout(url, options={}, ms=10000){
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), ms);
-      try{
-        return await fetch(url, { ...options, signal: controller.signal });
-      } finally { clearTimeout(id); }
     }
 
     function renderDebug(httpStatus, rawText){
@@ -304,7 +295,7 @@
               </a>
             `).join("")
           }</div>`
-        : `<div class="tiny">No citations returned yet (expected if SERPER_API_KEY isn’t set).</div>`;
+        : `<div class="tiny">No citations returned yet (expected without SERPER_API_KEY).</div>`;
 
       resultEl.innerHTML = `
         <div class="rowTop">
@@ -367,7 +358,6 @@
         const raw = await res.text();
         renderDebug(res.status, raw);
 
-        // Parse JSON safely
         let data = {};
         try { data = JSON.parse(raw || "{}"); } catch {}
 
@@ -377,7 +367,7 @@
           return;
         }
 
-        setStatus("ok ✅ response received");
+        setStatus("ok ✅");
         renderResult(data);
 
       } catch(err){
@@ -400,7 +390,7 @@
       linksEl.value = "";
       setStatus("ready");
       resultEl.innerHTML = `<div class="k">Waiting</div><div class="tiny">Run a check to see output.</div>`;
-      debugEl.innerHTML = `<div class="k">Debug</div><div class="tiny">Last HTTP status + raw body will appear here.</div>`;
+      debugEl.innerHTML = `<div class="k">Debug</div><div class="tiny">HTTP status + raw body will appear here.</div>`;
       claimEl.focus();
     });
 
@@ -429,13 +419,9 @@
     (async () => {
       try{
         const r = await fetchWithTimeout(`${API_BASE}/`, {}, 5000);
-        const t = await r.text();
-        healthEl.textContent = r.ok ? "OK ✅" : `HTTP ${r.status}`;
-        // also stash raw response in debug so you can see it
-        renderDebug(r.status, t);
+        healthTxt.textContent = r.ok ? "OK ✅" : `HTTP ${r.status}`;
       } catch(e){
-        healthEl.textContent = "Unreachable ❌";
-        renderDebug("unreachable", String(e));
+        healthTxt.textContent = "Unreachable ❌";
       }
     })();
   </script>
