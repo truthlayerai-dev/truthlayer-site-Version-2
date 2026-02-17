@@ -1,317 +1,214 @@
-<!-- docs/index.html -->
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TruthLayer — Claim Check</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>TruthLayer — Claim Check (v1)</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#0f1620; --panel2:#0c121a;
+      --text:#eaf2ff; --muted:#9fb0c6; --line:#1b2a3a;
+      --accent:#6ee7ff; --warn:#ffd36e; --bad:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1100px;margin:32px auto;padding:0 16px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .title{font-weight:900;font-size:18px;letter-spacing:.3px}
+    .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:6px 10px;border-radius:999px}
+    .grid{display:grid;grid-template-columns:1.25fr .95fr;gap:14px}
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:16px;padding:14px}
+    .label{font-size:12px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+    textarea,input{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px;font-size:14px;outline:none}
+    textarea{min-height:88px;resize:vertical}
+    .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+    button{background:rgba(110,231,255,.15);border:1px solid rgba(110,231,255,.4);color:var(--text);border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
+    button.secondary{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:700}
+    .muted{color:var(--muted);font-size:12px}
+    .good{color:var(--accent)}
+    .warn{color:var(--warn)}
+    .bad{color:var(--bad)}
+    .examples{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    .ex{border:1px solid var(--line);background:rgba(255,255,255,.03);padding:6px 10px;border-radius:999px;font-size:12px;cursor:pointer;color:var(--muted)}
+    .bar{height:10px;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:rgba(255,255,255,.03)}
+    .fill{height:100%;width:0%;background:linear-gradient(90deg,rgba(110,231,255,.9),rgba(110,231,255,.35))}
+    ul{margin:8px 0 0 18px;color:var(--text)}
+    li{margin:6px 0}
+    .tag{display:inline-block;margin-top:8px;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted)}
+    .footer{margin-top:12px;color:var(--muted);font-size:12px;text-align:center}
+  </style>
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo">TL</div>
-      <div>
-        <div class="title">TruthLayer</div>
-        <div class="subtitle">Claim Check (Prototype)</div>
-      </div>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">TruthLayer — Claim Check</div>
+      <div class="pill">Prototype v1 (no auto-citations yet)</div>
     </div>
 
-    <div class="right">
-      <span class="pill" id="healthPill">Worker: checking…</span>
-      <a class="ghost" href="#how" id="howLink">How it works</a>
-    </div>
-  </header>
+    <div class="grid">
+      <div class="card">
+        <div class="label">Claim</div>
+        <textarea id="claim" placeholder="Paste a claim here…"></textarea>
 
-  <main class="wrap">
-    <section class="grid">
-      <!-- Left: input -->
-      <div class="panel">
-        <h2>Check a claim</h2>
-        <p class="muted">
-          Paste a claim. Optionally add evidence links (one per line). Then hit <b>Check</b>.
-        </p>
-
-        <label class="label" for="claim">Claim</label>
-        <textarea id="claim" class="input" rows="4" placeholder="Example: Phoenix is the capital of Arizona"></textarea>
-
-        <label class="label" for="evidence">Evidence links (one per line)</label>
-        <textarea id="evidence" class="input" rows="4" placeholder="https://example.com/source&#10;https://another-source.com/article"></textarea>
+        <div class="label" style="margin-top:12px">Evidence links (optional, one per line)</div>
+        <textarea id="links" placeholder="https://example.com/source"></textarea>
 
         <div class="row">
-          <button class="btn" id="checkBtn">Check</button>
-          <button class="btn secondary" id="clearBtn">Clear</button>
-          <span class="status" id="status">Ready.</span>
+          <button id="checkBtn">Check claim</button>
+          <button id="clearBtn" class="secondary">Clear</button>
+          <span id="status" class="muted"></span>
         </div>
 
-        <div class="chips">
-          <button class="chip" data-example="az">AZ capital</button>
-          <button class="chip" data-example="treasury">Treasury debt</button>
-          <button class="chip" data-example="random">No-links test</button>
-        </div>
-
-        <div class="divider"></div>
-
-        <div id="how" class="how">
-          <h3>How it works (v1)</h3>
-          <ol>
-            <li>You submit a claim + optional links.</li>
-            <li>The Worker returns a verdict + confidence + “why”.</li>
-            <li>If you include links, they show up as citations (user-provided).</li>
-          </ol>
-          <p class="muted tiny">
-            This is a prototype scoring signal. Step 2 later can auto-fetch citations with SERPER or other tools.
-          </p>
+        <div class="label" style="margin-top:12px">Examples</div>
+        <div class="examples">
+          <div class="ex" data-claim="The capital of Arizona is Phoenix">AZ capital</div>
+          <div class="ex" data-claim="The US national debt is updated daily on FiscalData (Treasury)">Treasury debt</div>
+          <div class="ex" data-claim="Bitcoin has a maximum supply of 21 million coins">BTC supply</div>
+          <div class="ex" data-claim="The Great Wall of China is visible from space with the naked eye">Great Wall myth</div>
         </div>
       </div>
 
-      <!-- Right: results -->
-      <div class="panel">
-        <h2>Result</h2>
+      <div class="card">
+        <div class="label">Result</div>
+        <div id="verdict" style="font-size:22px;font-weight:900">—</div>
+        <div id="badge" class="tag">—</div>
 
-        <div class="resultCard" id="resultCard">
-          <div class="resultTop">
-            <div>
-              <div class="kicker">VERDICT</div>
-              <div class="verdict" id="verdict">—</div>
-            </div>
-            <div class="badge" id="badge">—</div>
-          </div>
+        <div class="label" style="margin-top:12px">Confidence</div>
+        <div class="bar"><div id="fill" class="fill"></div></div>
+        <div id="score" class="muted" style="margin-top:6px">—</div>
 
-          <div class="kicker">CONFIDENCE</div>
-          <div class="bar">
-            <div class="barFill" id="barFill"></div>
-          </div>
-          <div class="barMeta">
-            <span class="muted tiny" id="barLeft">Prototype</span>
-            <span class="percent" id="percent">0%</span>
-          </div>
+        <div class="label" style="margin-top:12px">Why</div>
+        <ul id="why"><li>—</li></ul>
 
-          <div class="divider"></div>
+        <div class="label" style="margin-top:12px">Suggested next links</div>
+        <ul id="suggested"><li>—</li></ul>
 
-          <div class="kicker">WHY</div>
-          <ul class="bullets" id="why"></ul>
-
-          <div class="divider"></div>
-
-          <div class="kicker">CITATIONS</div>
-          <div class="citations" id="citations">
-            <div class="muted">None</div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="row">
-            <button class="btn secondary" id="copyBtn">Copy result</button>
-            <span class="muted tiny" id="debug"></span>
-          </div>
-        </div>
+        <div class="footer">Step 2 will plug in real citations via a backend (Cloudflare Worker / API).</div>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
   <script>
-    // ✅ YOUR WORKER ENDPOINT
-   const API = "https://YOUR-WORKER.workers.dev/api/check";
-const HEALTH = "https://YOUR-WORKER.workers.dev/"
+    const $ = (id)=>document.getElementById(id);
 
-    const el = (id) => document.getElementById(id);
-
-    const claimEl = el("claim");
-    const evidenceEl = el("evidence");
-    const statusEl = el("status");
-    const healthPill = el("healthPill");
-
-    const verdictEl = el("verdict");
-    const badgeEl = el("badge");
-    const barFillEl = el("barFill");
-    const percentEl = el("percent");
-    const whyEl = el("why");
-    const citationsEl = el("citations");
-    const debugEl = el("debug");
-
-    function setStatus(text, kind="ok") {
-      statusEl.textContent = text;
-      statusEl.className = "status " + kind;
+    function extractUrls(text){
+      const re = /(https?:\/\/[^\s]+)/g;
+      return (text.match(re) || []).map(u => u.replace(/[)\],.]+$/,""));
     }
 
-    function setHealth(text, good) {
-      healthPill.textContent = text;
-      healthPill.className = "pill " + (good ? "good" : "bad");
+    function scoreClaim(claim, links){
+      const lc = claim.toLowerCase();
+
+      // specificity heuristics
+      const hasNumber = /\d/.test(claim);
+      const hasDate = /\b(19|20)\d{2}\b/.test(claim) || /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(claim);
+      const hasWho = /\b(ceo|president|senator|company|inc|corp|llc|court|cdc|who|fda|sec|treasury|congress)\b/i.test(claim);
+      const longEnough = claim.trim().length >= 25;
+
+      // common myth-ish keywords (not “truth”, just low-confidence signals)
+      const mythy = /\b(always|never|100%|guaranteed|secretly|they don’t want you to know|cure-all)\b/i.test(claim);
+
+      // links quality rough guess
+      const hasLinks = links.length > 0;
+      const hasGov = links.some(u => u.includes(".gov") || u.includes(".mil"));
+      const hasEdu = links.some(u => u.includes(".edu"));
+      const hasWiki = links.some(u => u.includes("wikipedia.org"));
+      const hasNews = links.some(u => /(reuters|apnews|bbc|nytimes|wsj|theguardian|npr|cnbc|bloomberg)/i.test(u));
+
+      let score = 18; // base low
+      if(longEnough) score += 10;
+      if(hasNumber) score += 10;
+      if(hasDate) score += 10;
+      if(hasWho) score += 8;
+
+      if(hasLinks) score += 18;
+      if(hasGov) score += 18;
+      else if(hasEdu) score += 12;
+      else if(hasNews) score += 10;
+      else if(hasWiki) score += 6;
+
+      if(mythy) score -= 12;
+
+      // clamp
+      score = Math.max(5, Math.min(95, score));
+
+      let verdict = "Unverified / unclear";
+      let badge = "No sources";
+      if(score >= 75) { verdict = "Likely true (supported)"; badge = "Strong support"; }
+      else if(score >= 55) { verdict = "Mixed / uncertain"; badge = "Some support"; }
+      else if(score >= 35) { verdict = "Weak support"; badge = "Weak support"; }
+      else { verdict = "Unclear / likely false"; badge = "Low support"; }
+
+      const why = [];
+      if(!longEnough) why.push("Claim is short — add who/what/when/where.");
+      if(!hasNumber && !hasDate) why.push("No numbers/dates — specifics raise testability.");
+      if(!hasLinks) why.push("No evidence links provided — this stays unverified.");
+      if(hasLinks && hasGov) why.push("Government source link(s) detected — higher credibility signal.");
+      if(hasLinks && hasNews) why.push("Major news source link detected — better than random blogs.");
+      if(hasLinks && hasWiki && !hasGov && !hasNews) why.push("Wikipedia is useful for orientation, but confirm with primary sources.");
+      if(mythy) why.push("Absolute/viral phrasing detected — treat cautiously until verified.");
+      if(why.length === 0) why.push("Looks testable. Next step: cross-check sources and quote key lines.");
+
+      const suggested = [
+        "Primary documents (gov/court filings) when possible",
+        "Official stats (Treasury/CDC/WHO/SEC) depending on topic",
+        "2 independent reputable outlets for confirmation"
+      ];
+
+      return { score, verdict, badge, why, suggested };
     }
 
-    function cleanLines(text) {
-      return text
-        .split("\n")
-        .map(s => s.trim())
-        .filter(Boolean);
+    function render(res){
+      $("verdict").textContent = res.verdict;
+      $("badge").textContent = res.badge;
+      $("fill").style.width = res.score + "%";
+      $("score").textContent = res.score + "% confidence (prototype)";
+
+      $("why").innerHTML = "";
+      res.why.forEach(x=>{
+        const li=document.createElement("li");
+        li.textContent=x;
+        $("why").appendChild(li);
+      });
+
+      $("suggested").innerHTML = "";
+      res.suggested.forEach(x=>{
+        const li=document.createElement("li");
+        li.textContent=x;
+        $("suggested").appendChild(li);
+      });
     }
 
-    function escapeHtml(s) {
-      return s.replace(/[&<>"']/g, (c) => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-      }[c]));
-    }
+    function check(){
+      const claim = $("claim").value.trim();
+      const linkLines = $("links").value.split("\n").map(s=>s.trim()).filter(Boolean);
+      const urlsFromClaim = extractUrls(claim);
+      const links = [...new Set([...linkLines, ...urlsFromClaim])];
 
-    function renderResult(data) {
-      verdictEl.textContent = data.verdict ?? "—";
-      badgeEl.textContent = data.label ?? "—";
-
-      const conf = Number(data.confidence ?? 0);
-      percentEl.textContent = conf + "%";
-      barFillEl.style.width = Math.max(0, Math.min(100, conf)) + "%";
-
-      // why bullets
-      whyEl.innerHTML = "";
-      const whyList = Array.isArray(data.why) ? data.why : [];
-      for (const item of whyList) {
-        const li = document.createElement("li");
-        li.textContent = item;
-        whyEl.appendChild(li);
-      }
-      if (!whyList.length) {
-        const li = document.createElement("li");
-        li.textContent = "No explanation returned.";
-        whyEl.appendChild(li);
-      }
-
-      // citations
-      const cits = Array.isArray(data.citations) ? data.citations : [];
-      if (!cits.length) {
-        citationsEl.innerHTML = '<div class="muted">None</div>';
-      } else {
-        citationsEl.innerHTML = "";
-        cits.forEach((c) => {
-          const a = document.createElement("a");
-          a.href = c.url || "#";
-          a.target = "_blank";
-          a.rel = "noreferrer";
-          a.className = "cite";
-          a.innerHTML = `<div class="citeTitle">${escapeHtml(c.title || "Source")}</div>
-                         <div class="citeUrl">${escapeHtml(c.url || "")}</div>
-                         <div class="citeSnippet">${escapeHtml(c.snippet || "")}</div>`;
-          citationsEl.appendChild(a);
-        });
-      }
-
-      // badge color vibe
-      const label = (data.label || "").toLowerCase();
-      badgeEl.className = "badge " + (
-        label.includes("strong") ? "b-good" :
-        label.includes("some") ? "b-mid" :
-        "b-bad"
-      );
-
-      debugEl.textContent = "";
-    }
-
-    async function checkHealth() {
-      try {
-        const r = await fetch(HEALTH, { method: "GET" });
-        const j = await r.json();
-        if (j && j.ok) setHealth("Worker: OK", true);
-        else setHealth("Worker: weird response", false);
-      } catch (e) {
-        setHealth("Worker: unreachable", false);
-      }
-    }
-
-    async function checkClaim() {
-      const claim = claimEl.value.trim();
-      const evidenceLinks = cleanLines(evidenceEl.value);
-
-      if (!claim) {
-        setStatus("Type a claim first.", "bad");
+      if(!claim){
+        $("status").textContent = "Type a claim first.";
         return;
       }
-
-      setStatus("Checking…", "wait");
-
-      try {
-        const res = await fetch(API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ claim, evidenceLinks })
-        });
-
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); }
-        catch { throw new Error("Bad JSON: " + text.slice(0,120)); }
-
-        if (!res.ok || !data.ok) {
-          debugEl.textContent = data?.error ? ("Error: " + data.error) : ("HTTP " + res.status);
-          setStatus("Error returned. See debug.", "bad");
-          return;
-        }
-
-        renderResult(data);
-        setStatus("Done.", "ok");
-      } catch (err) {
-        debugEl.textContent = "Fetch failed: " + (err?.message || String(err));
-        setStatus("Status: error", "bad");
-      }
+      $("status").textContent = "Checked.";
+      render(scoreClaim(claim, links));
     }
 
-    function clearAll() {
-      claimEl.value = "";
-      evidenceEl.value = "";
-      setStatus("Cleared.", "ok");
-      renderResult({ verdict:"—", label:"—", confidence:0, why:[], citations:[] });
-    }
-
-    function copyResult() {
-      const payload = {
-        claim: claimEl.value.trim(),
-        verdict: verdictEl.textContent,
-        confidence: percentEl.textContent,
-        why: Array.from(whyEl.querySelectorAll("li")).map(li => li.textContent),
-        citations: Array.from(citationsEl.querySelectorAll("a")).map(a => a.href)
-      };
-      navigator.clipboard.writeText(JSON.stringify(payload, null, 2))
-        .then(() => setStatus("Copied result JSON to clipboard.", "ok"))
-        .catch(() => setStatus("Copy failed (browser blocked).", "bad"));
-    }
-
-    // examples
-    const examples = {
-      az: {
-        claim: "Phoenix is the capital of Arizona.",
-        evidence: "https://az.gov/"
-      },
-      treasury: {
-        claim: "The U.S. Treasury publishes the national debt as a dataset called 'Debt to the Penny.'",
-        evidence: "https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny"
-      },
-      random: {
-        claim: "The Great Wall of China is visible from space with the naked eye.",
-        evidence: ""
-      }
-    };
-
-    document.querySelectorAll(".chip").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const key = btn.dataset.example;
-        claimEl.value = examples[key].claim;
-        evidenceEl.value = examples[key].evidence;
-        setStatus("Example loaded.", "ok");
-      });
+    $("checkBtn").addEventListener("click", check);
+    $("clearBtn").addEventListener("click", ()=>{
+      $("claim").value="";
+      $("links").value="";
+      $("status").textContent="";
+      render({score:0, verdict:"—", badge:"—", why:["—"], suggested:["—"]});
     });
 
-    el("checkBtn").addEventListener("click", checkClaim);
-    el("clearBtn").addEventListener("click", clearAll);
-    el("copyBtn").addEventListener("click", copyResult);
-
-    // allow Ctrl+Enter to check
-    [claimEl, evidenceEl].forEach(t => {
-      t.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") checkClaim();
+    document.querySelectorAll(".ex").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        $("claim").value = el.dataset.claim || "";
+        $("links").value = "";
+        $("status").textContent="";
       });
     });
-
-    // boot
-    checkHealth();
-    renderResult({ verdict:"—", label:"—", confidence:0, why:[], citations:[] });
   </script>
 </body>
 </html>
