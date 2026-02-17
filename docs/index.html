@@ -1,214 +1,197 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>TruthLayer — Claim Check (v1)</title>
-  <style>
-    :root{
-      --bg:#0b0f14; --panel:#0f1620; --panel2:#0c121a;
-      --text:#eaf2ff; --muted:#9fb0c6; --line:#1b2a3a;
-      --accent:#6ee7ff; --warn:#ffd36e; --bad:#ff6b6b;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
-    .wrap{max-width:1100px;margin:32px auto;padding:0 16px}
-    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-    .title{font-weight:900;font-size:18px;letter-spacing:.3px}
-    .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:6px 10px;border-radius:999px}
-    .grid{display:grid;grid-template-columns:1.25fr .95fr;gap:14px}
-    .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:16px;padding:14px}
-    .label{font-size:12px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
-    textarea,input{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px;font-size:14px;outline:none}
-    textarea{min-height:88px;resize:vertical}
-    .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
-    button{background:rgba(110,231,255,.15);border:1px solid rgba(110,231,255,.4);color:var(--text);border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer}
-    button.secondary{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:700}
-    .muted{color:var(--muted);font-size:12px}
-    .good{color:var(--accent)}
-    .warn{color:var(--warn)}
-    .bad{color:var(--bad)}
-    .examples{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-    .ex{border:1px solid var(--line);background:rgba(255,255,255,.03);padding:6px 10px;border-radius:999px;font-size:12px;cursor:pointer;color:var(--muted)}
-    .bar{height:10px;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:rgba(255,255,255,.03)}
-    .fill{height:100%;width:0%;background:linear-gradient(90deg,rgba(110,231,255,.9),rgba(110,231,255,.35))}
-    ul{margin:8px 0 0 18px;color:var(--text)}
-    li{margin:6px 0}
-    .tag{display:inline-block;margin-top:8px;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted)}
-    .footer{margin-top:12px;color:var(--muted);font-size:12px;text-align:center}
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TruthLayer — Claim Check</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
-
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="title">TruthLayer — Claim Check</div>
-      <div class="pill">Prototype v1 (no auto-citations yet)</div>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <div class="label">Claim</div>
-        <textarea id="claim" placeholder="Paste a claim here…"></textarea>
-
-        <div class="label" style="margin-top:12px">Evidence links (optional, one per line)</div>
-        <textarea id="links" placeholder="https://example.com/source"></textarea>
-
-        <div class="row">
-          <button id="checkBtn">Check claim</button>
-          <button id="clearBtn" class="secondary">Clear</button>
-          <span id="status" class="muted"></span>
-        </div>
-
-        <div class="label" style="margin-top:12px">Examples</div>
-        <div class="examples">
-          <div class="ex" data-claim="The capital of Arizona is Phoenix">AZ capital</div>
-          <div class="ex" data-claim="The US national debt is updated daily on FiscalData (Treasury)">Treasury debt</div>
-          <div class="ex" data-claim="Bitcoin has a maximum supply of 21 million coins">BTC supply</div>
-          <div class="ex" data-claim="The Great Wall of China is visible from space with the naked eye">Great Wall myth</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="label">Result</div>
-        <div id="verdict" style="font-size:22px;font-weight:900">—</div>
-        <div id="badge" class="tag">—</div>
-
-        <div class="label" style="margin-top:12px">Confidence</div>
-        <div class="bar"><div id="fill" class="fill"></div></div>
-        <div id="score" class="muted" style="margin-top:6px">—</div>
-
-        <div class="label" style="margin-top:12px">Why</div>
-        <ul id="why"><li>—</li></ul>
-
-        <div class="label" style="margin-top:12px">Suggested next links</div>
-        <ul id="suggested"><li>—</li></ul>
-
-        <div class="footer">Step 2 will plug in real citations via a backend (Cloudflare Worker / API).</div>
-      </div>
-    </div>
+  <div class="topbar">
+    <div class="brand">TruthLayer — Claim Check</div>
+    <div class="pill">Prototype v1 (hybrid: demo facts + user citations)</div>
   </div>
 
+  <main class="grid">
+    <section class="panel">
+      <h2>Claim</h2>
+      <textarea id="claim" placeholder="Type a claim… (e.g., 'Capital of AZ is Phoenix')"></textarea>
+
+      <h3>Evidence links (optional, one per line)</h3>
+      <textarea id="evidence" placeholder="https://example.com/source"></textarea>
+
+      <div class="row">
+        <button id="checkBtn">Check claim</button>
+        <button class="ghost" id="clearBtn">Clear</button>
+        <span id="status" class="status">Idle</span>
+      </div>
+
+      <div class="examples">
+        <div class="label">Examples</div>
+        <button class="chip" data-claim="Capital of AZ is Phoenix">AZ capital</button>
+        <button class="chip" data-claim="Bitcoin supply is capped at 21 million">BTC supply</button>
+        <button class="chip" data-claim="The Great Wall of China is visible from space with the naked eye">Great Wall myth</button>
+        <button class="chip" data-claim="US federal debt can be tracked to-the-penny">Treasury debt</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Result</h2>
+
+      <div class="resultCard">
+        <div class="resultTop">
+          <div>
+            <div class="tiny">RESULT</div>
+            <div id="verdict" class="verdict">—</div>
+            <div id="supportTag" class="tag">—</div>
+          </div>
+          <div class="scoreBox">
+            <div class="tiny">CONFIDENCE</div>
+            <div class="scoreRow">
+              <div class="bar"><div id="barFill" class="barFill"></div></div>
+              <div id="score" class="score">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tiny">WHY</div>
+        <ul id="whyList" class="bullets"></ul>
+
+        <div class="tiny">CITATIONS</div>
+        <div id="citations" class="citations">None</div>
+
+        <details class="debug">
+          <summary>Debug</summary>
+          <pre id="debugOut">{}</pre>
+        </details>
+      </div>
+    </section>
+  </main>
+
   <script>
-    const $ = (id)=>document.getElementById(id);
+    // 🔧 SET THIS:
+    const WORKER_BASE = "YOUR_WORKER_URL_HERE"; // e.g. https://rapid-flower-be72truthlayer.truthlayer-ai.workers.dev
 
-    function extractUrls(text){
-      const re = /(https?:\/\/[^\s]+)/g;
-      return (text.match(re) || []).map(u => u.replace(/[)\],.]+$/,""));
+    const el = (id) => document.getElementById(id);
+
+    function setStatus(text, kind="") {
+      const s = el("status");
+      s.textContent = text;
+      s.dataset.kind = kind;
     }
 
-    function scoreClaim(claim, links){
-      const lc = claim.toLowerCase();
+    function renderResult(data) {
+      el("verdict").textContent = data.verdict ?? "—";
+      el("supportTag").textContent = data.support ?? "—";
+      el("supportTag").className = "tag " + (data.supportClass ?? "");
 
-      // specificity heuristics
-      const hasNumber = /\d/.test(claim);
-      const hasDate = /\b(19|20)\d{2}\b/.test(claim) || /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(claim);
-      const hasWho = /\b(ceo|president|senator|company|inc|corp|llc|court|cdc|who|fda|sec|treasury|congress)\b/i.test(claim);
-      const longEnough = claim.trim().length >= 25;
+      const pct = Math.round((data.confidence ?? 0) * 100);
+      el("score").textContent = pct + "%";
+      el("barFill").style.width = pct + "%";
 
-      // common myth-ish keywords (not “truth”, just low-confidence signals)
-      const mythy = /\b(always|never|100%|guaranteed|secretly|they don’t want you to know|cure-all)\b/i.test(claim);
-
-      // links quality rough guess
-      const hasLinks = links.length > 0;
-      const hasGov = links.some(u => u.includes(".gov") || u.includes(".mil"));
-      const hasEdu = links.some(u => u.includes(".edu"));
-      const hasWiki = links.some(u => u.includes("wikipedia.org"));
-      const hasNews = links.some(u => /(reuters|apnews|bbc|nytimes|wsj|theguardian|npr|cnbc|bloomberg)/i.test(u));
-
-      let score = 18; // base low
-      if(longEnough) score += 10;
-      if(hasNumber) score += 10;
-      if(hasDate) score += 10;
-      if(hasWho) score += 8;
-
-      if(hasLinks) score += 18;
-      if(hasGov) score += 18;
-      else if(hasEdu) score += 12;
-      else if(hasNews) score += 10;
-      else if(hasWiki) score += 6;
-
-      if(mythy) score -= 12;
-
-      // clamp
-      score = Math.max(5, Math.min(95, score));
-
-      let verdict = "Unverified / unclear";
-      let badge = "No sources";
-      if(score >= 75) { verdict = "Likely true (supported)"; badge = "Strong support"; }
-      else if(score >= 55) { verdict = "Mixed / uncertain"; badge = "Some support"; }
-      else if(score >= 35) { verdict = "Weak support"; badge = "Weak support"; }
-      else { verdict = "Unclear / likely false"; badge = "Low support"; }
-
-      const why = [];
-      if(!longEnough) why.push("Claim is short — add who/what/when/where.");
-      if(!hasNumber && !hasDate) why.push("No numbers/dates — specifics raise testability.");
-      if(!hasLinks) why.push("No evidence links provided — this stays unverified.");
-      if(hasLinks && hasGov) why.push("Government source link(s) detected — higher credibility signal.");
-      if(hasLinks && hasNews) why.push("Major news source link detected — better than random blogs.");
-      if(hasLinks && hasWiki && !hasGov && !hasNews) why.push("Wikipedia is useful for orientation, but confirm with primary sources.");
-      if(mythy) why.push("Absolute/viral phrasing detected — treat cautiously until verified.");
-      if(why.length === 0) why.push("Looks testable. Next step: cross-check sources and quote key lines.");
-
-      const suggested = [
-        "Primary documents (gov/court filings) when possible",
-        "Official stats (Treasury/CDC/WHO/SEC) depending on topic",
-        "2 independent reputable outlets for confirmation"
-      ];
-
-      return { score, verdict, badge, why, suggested };
-    }
-
-    function render(res){
-      $("verdict").textContent = res.verdict;
-      $("badge").textContent = res.badge;
-      $("fill").style.width = res.score + "%";
-      $("score").textContent = res.score + "% confidence (prototype)";
-
-      $("why").innerHTML = "";
-      res.why.forEach(x=>{
-        const li=document.createElement("li");
-        li.textContent=x;
-        $("why").appendChild(li);
+      const why = el("whyList");
+      why.innerHTML = "";
+      (data.why ?? []).forEach(line => {
+        const li = document.createElement("li");
+        li.textContent = line;
+        why.appendChild(li);
       });
 
-      $("suggested").innerHTML = "";
-      res.suggested.forEach(x=>{
-        const li=document.createElement("li");
-        li.textContent=x;
-        $("suggested").appendChild(li);
-      });
+      const c = el("citations");
+      const cites = data.citations ?? [];
+      if (!cites.length) {
+        c.textContent = "None";
+      } else {
+        c.innerHTML = "";
+        cites.forEach(ci => {
+          const a = document.createElement("a");
+          a.href = ci.url;
+          a.target = "_blank";
+          a.rel = "noreferrer";
+          a.className = "cite";
+          a.innerHTML = `<div class="citeTitle">${ci.title ?? ci.url}</div>
+                         <div class="citeUrl">${ci.url}</div>
+                         <div class="citeSnip">${ci.snippet ?? ""}</div>`;
+          c.appendChild(a);
+        });
+      }
+
+      el("debugOut").textContent = JSON.stringify(data, null, 2);
     }
 
-    function check(){
-      const claim = $("claim").value.trim();
-      const linkLines = $("links").value.split("\n").map(s=>s.trim()).filter(Boolean);
-      const urlsFromClaim = extractUrls(claim);
-      const links = [...new Set([...linkLines, ...urlsFromClaim])];
+    function parseEvidenceLines() {
+      return el("evidence").value
+        .split("\n")
+        .map(x => x.trim())
+        .filter(Boolean);
+    }
 
-      if(!claim){
-        $("status").textContent = "Type a claim first.";
+    async function checkClaim() {
+      const claim = el("claim").value.trim();
+      const evidenceLinks = parseEvidenceLines();
+
+      if (!claim) {
+        setStatus("Type a claim first.", "warn");
         return;
       }
-      $("status").textContent = "Checked.";
-      render(scoreClaim(claim, links));
+
+      setStatus("Checking…", "busy");
+
+      try {
+        const res = await fetch(`${WORKER_BASE}/api/check`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ claim, evidenceLinks })
+        });
+
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch { data = { verdict: "Error", support: "Bad response", confidence: 0, why: [text], citations: [] }; }
+
+        if (!res.ok) {
+          setStatus(`HTTP ${res.status}`, "err");
+        } else {
+          setStatus("Checked.", "ok");
+        }
+
+        renderResult(data);
+
+      } catch (e) {
+        setStatus("Network error (failed to fetch).", "err");
+        renderResult({
+          verdict: "Error",
+          support: "Worker unreachable",
+          supportClass: "bad",
+          confidence: 0,
+          why: [
+            "Your browser could not reach the Worker endpoint.",
+            "Double-check WORKER_BASE in index.html and that your Worker is deployed.",
+            String(e)
+          ],
+          citations: []
+        });
+      }
     }
 
-    $("checkBtn").addEventListener("click", check);
-    $("clearBtn").addEventListener("click", ()=>{
-      $("claim").value="";
-      $("links").value="";
-      $("status").textContent="";
-      render({score:0, verdict:"—", badge:"—", why:["—"], suggested:["—"]});
+    el("checkBtn").addEventListener("click", checkClaim);
+
+    el("clearBtn").addEventListener("click", () => {
+      el("claim").value = "";
+      el("evidence").value = "";
+      renderResult({ verdict:"—", support:"—", confidence:0, why:[], citations:[] });
+      setStatus("Idle");
     });
 
-    document.querySelectorAll(".ex").forEach(el=>{
-      el.addEventListener("click", ()=>{
-        $("claim").value = el.dataset.claim || "";
-        $("links").value = "";
-        $("status").textContent="";
+    document.querySelectorAll(".chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        el("claim").value = btn.dataset.claim;
+        el("evidence").value = "";
+        setStatus("Loaded example.");
       });
     });
+
+    renderResult({ verdict:"—", support:"—", confidence:0, why:[], citations:[] });
   </script>
 </body>
 </html>
