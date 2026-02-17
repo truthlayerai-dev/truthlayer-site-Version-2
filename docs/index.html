@@ -1,429 +1,317 @@
+<!-- docs/index.html -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>TruthLayer — Claim Check</title>
-  <style>
-    :root{
-      --bg:#0b0f14; --panel:#0f1620; --text:#eaf2ff; --muted:#9fb6c6; --line:#1b2a3a; --accent:#6ee7ff;
-      --good:#2ee59d; --mid:#ffd36e; --bad:#ff6e6e; --shadow:0 10px 30px rgba(0,0,0,.35);
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color:var(--text);
-      background:
-        radial-gradient(1000px 600px at 10% 0%, rgba(110,231,255,.10), transparent 55%),
-        radial-gradient(900px 500px at 90% 10%, rgba(255,211,110,.08), transparent 55%),
-        var(--bg);
-    }
-    .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 28px}
-    .top{
-      display:flex;justify-content:space-between;align-items:center;gap:12px;
-      padding:12px 14px;border:1px solid var(--line);border-radius:16px;
-      background: linear-gradient(180deg, rgba(15,22,32,.85), rgba(15,22,32,.55));
-      box-shadow:var(--shadow);backdrop-filter:blur(10px);
-    }
-    .brand{display:flex;align-items:center;gap:12px}
-    .logo{
-      width:40px;height:40px;border-radius:14px;
-      border:1px solid rgba(110,231,255,.35);
-      background: rgba(110,231,255,.16);
-      color:var(--accent);
-      display:grid;place-items:center;
-      font-weight:900;letter-spacing:.5px;
-    }
-    .name{font-weight:900;font-size:16px}
-    .sub{color:var(--muted);font-size:12px;margin-top:2px}
-    .pillrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
-    .pill{
-      border:1px solid var(--line);
-      background: rgba(11,15,20,.30);
-      border-radius:999px;
-      padding:7px 10px;
-      font-size:12px;
-      color:rgba(234,242,255,.92);
-      white-space:nowrap;
-    }
-    .pill strong{color:var(--accent)}
-    .grid{margin-top:14px;display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
-    @media (max-width:980px){.grid{grid-template-columns:1fr}}
-    .panel{
-      border:1px solid var(--line);border-radius:18px;
-      background: linear-gradient(180deg, rgba(15,22,32,.75), rgba(12,18,26,.65));
-      box-shadow:var(--shadow);
-      padding:14px;
-    }
-    h1,h2{margin:0;font-size:18px}
-    p{margin:6px 0 0;color:var(--muted);font-size:13px}
-    .box{
-      margin-top:12px;
-      border:1px solid rgba(27,42,58,.9);
-      background: rgba(11,15,20,.35);
-      border-radius:16px;
-      padding:12px;
-    }
-    .label{
-      display:block;margin:10px 0 6px;
-      font-size:12px;letter-spacing:.08em;text-transform:uppercase;
-      color:rgba(159,182,198,.9);font-weight:800;
-    }
-    textarea{
-      width:100%;
-      border-radius:14px;
-      border:1px solid rgba(27,42,58,.9);
-      background: rgba(10,14,20,.55);
-      color:var(--text);
-      padding:10px 12px;
-      outline:none;
-      resize:vertical;
-      min-height:46px;
-      line-height:1.35;
-    }
-    textarea:focus{
-      border-color: rgba(110,231,255,.45);
-      box-shadow: 0 0 0 3px rgba(110,231,255,.10);
-    }
-    .actions{margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .btn{
-      border:1px solid var(--line);
-      background: rgba(11,15,20,.25);
-      color:var(--text);
-      padding:10px 14px;border-radius:14px;
-      cursor:pointer;font-weight:900;
-    }
-    .btn:hover{border-color: rgba(110,231,255,.35)}
-    .btn:disabled{opacity:.55;cursor:not-allowed}
-    .btn.primary{
-      background: rgba(110,231,255,.16);
-      border-color: rgba(110,231,255,.35);
-      color: var(--accent);
-    }
-    .status{
-      font-size:12px;color:rgba(159,182,198,.95);
-      padding:8px 10px;border-radius:12px;
-      border:1px dashed rgba(27,42,58,.95);
-      background: rgba(11,15,20,.18);
-    }
-    .chips{margin-top:10px;display:flex;flex-wrap:wrap;gap:10px}
-    .chip{
-      border:1px solid var(--line);
-      background: rgba(11,15,20,.25);
-      color:var(--text);
-      padding:8px 10px;border-radius:999px;
-      cursor:pointer;font-weight:750;font-size:12px;
-    }
-    .chip:hover{border-color: rgba(110,231,255,.35)}
-    .card{
-      margin-top:12px;
-      border:1px solid var(--line);
-      background: rgba(11,15,20,.35);
-      border-radius:18px;
-      padding:14px;
-    }
-    .k{
-      font-size:12px;letter-spacing:.08em;text-transform:uppercase;
-      color:rgba(159,182,198,.9);margin-bottom:4px;
-    }
-    .rowTop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-    .verdict{font-size:20px;font-weight:950}
-    .badge{
-      font-size:12px;font-weight:900;
-      padding:7px 10px;border-radius:999px;border:1px solid var(--line);
-    }
-    .badge.good{border-color: rgba(46,229,157,.45); color: var(--good); background: rgba(46,229,157,.10)}
-    .badge.mid{border-color: rgba(255,211,110,.45); color: var(--mid); background: rgba(255,211,110,.10)}
-    .badge.bad{border-color: rgba(255,110,110,.45); color: var(--bad); background: rgba(255,110,110,.10)}
-    .barRow{display:flex;align-items:center;gap:10px;margin-top:6px}
-    .bar{flex:1;height:10px;border-radius:999px;background: rgba(27,42,58,.65);overflow:hidden;border:1px solid rgba(27,42,58,.9)}
-    .fill{height:100%;background: linear-gradient(90deg, rgba(110,231,255,.85), rgba(46,229,157,.75))}
-    .pct{min-width:44px;text-align:right;font-weight:950}
-    .bullets{margin:8px 0 0;padding-left:18px}
-    .bullets li{margin:6px 0;color:rgba(234,242,255,.92)}
-    .cites{margin-top:10px;display:flex;flex-direction:column;gap:10px}
-    .cite{
-      display:block;text-decoration:none;color:var(--text);
-      border:1px solid rgba(27,42,58,.9);
-      background: rgba(10,14,20,.35);
-      border-radius:16px;padding:10px 12px;
-    }
-    .cite:hover{border-color: rgba(110,231,255,.35)}
-    .citeTitle{font-weight:950;margin-bottom:6px}
-    .citeSnippet{font-size:13px;line-height:1.35;color:rgba(234,242,255,.90)}
-    .citeUrl{margin-top:8px;font-size:12px;color:rgba(159,182,198,.9);word-break:break-word}
-    .tiny{font-size:12px;color:var(--muted)}
-    code{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-  </style>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
-
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="brand">
-        <div class="logo">TL</div>
-        <div>
-          <div class="name">TruthLayer</div>
-          <div class="sub">Claim Check • GitHub Pages + Cloudflare Worker</div>
-        </div>
-      </div>
-      <div class="pillrow">
-        <div class="pill">Worker: <strong id="workerTxt">—</strong></div>
-        <div class="pill">Health: <strong id="healthTxt">—</strong></div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">TL</div>
+      <div>
+        <div class="title">TruthLayer</div>
+        <div class="subtitle">Claim Check (Prototype)</div>
       </div>
     </div>
 
-    <div class="grid">
+    <div class="right">
+      <span class="pill" id="healthPill">Worker: checking…</span>
+      <a class="ghost" href="#how" id="howLink">How it works</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="grid">
+      <!-- Left: input -->
       <div class="panel">
-        <h1>Input</h1>
-        <p>Type a claim → click <b>Check</b>. Works in prototype mode even without SERPER.</p>
+        <h2>Check a claim</h2>
+        <p class="muted">
+          Paste a claim. Optionally add evidence links (one per line). Then hit <b>Check</b>.
+        </p>
 
-        <div class="box">
-          <label class="label">Claim</label>
-          <textarea id="claim" rows="3" placeholder="Phoenix is the capital of Arizona."></textarea>
+        <label class="label" for="claim">Claim</label>
+        <textarea id="claim" class="input" rows="4" placeholder="Example: Phoenix is the capital of Arizona"></textarea>
 
-          <label class="label">Optional evidence links (one per line)</label>
-          <textarea id="links" rows="2" placeholder="https://example.com/source"></textarea>
+        <label class="label" for="evidence">Evidence links (one per line)</label>
+        <textarea id="evidence" class="input" rows="4" placeholder="https://example.com/source&#10;https://another-source.com/article"></textarea>
 
-          <div class="actions">
-            <button id="checkBtn" class="btn primary" type="button">Check</button>
-            <button id="clearBtn" class="btn" type="button">Clear</button>
-            <div id="status" class="status">Status: ready</div>
-          </div>
+        <div class="row">
+          <button class="btn" id="checkBtn">Check</button>
+          <button class="btn secondary" id="clearBtn">Clear</button>
+          <span class="status" id="status">Ready.</span>
+        </div>
 
-          <div class="chips" id="chips"></div>
+        <div class="chips">
+          <button class="chip" data-example="az">AZ capital</button>
+          <button class="chip" data-example="treasury">Treasury debt</button>
+          <button class="chip" data-example="random">No-links test</button>
+        </div>
 
-          <div class="tiny" style="margin-top:10px;">
-            If you want real web citations: add <code>SERPER_API_KEY</code> in Worker secrets.
-          </div>
+        <div class="divider"></div>
+
+        <div id="how" class="how">
+          <h3>How it works (v1)</h3>
+          <ol>
+            <li>You submit a claim + optional links.</li>
+            <li>The Worker returns a verdict + confidence + “why”.</li>
+            <li>If you include links, they show up as citations (user-provided).</li>
+          </ol>
+          <p class="muted tiny">
+            This is a prototype scoring signal. Step 2 later can auto-fetch citations with SERPER or other tools.
+          </p>
         </div>
       </div>
 
+      <!-- Right: results -->
       <div class="panel">
         <h2>Result</h2>
-        <p>Verdict + confidence + citations.</p>
 
-        <div id="result" class="card">
-          <div class="k">Waiting</div>
-          <div class="tiny">Run a check to see output.</div>
-        </div>
+        <div class="resultCard" id="resultCard">
+          <div class="resultTop">
+            <div>
+              <div class="kicker">VERDICT</div>
+              <div class="verdict" id="verdict">—</div>
+            </div>
+            <div class="badge" id="badge">—</div>
+          </div>
 
-        <div id="debug" class="card" style="margin-top:12px;">
-          <div class="k">Debug</div>
-          <div class="tiny">HTTP status + raw body will appear here.</div>
+          <div class="kicker">CONFIDENCE</div>
+          <div class="bar">
+            <div class="barFill" id="barFill"></div>
+          </div>
+          <div class="barMeta">
+            <span class="muted tiny" id="barLeft">Prototype</span>
+            <span class="percent" id="percent">0%</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="kicker">WHY</div>
+          <ul class="bullets" id="why"></ul>
+
+          <div class="divider"></div>
+
+          <div class="kicker">CITATIONS</div>
+          <div class="citations" id="citations">
+            <div class="muted">None</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="row">
+            <button class="btn secondary" id="copyBtn">Copy result</button>
+            <span class="muted tiny" id="debug"></span>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script>
-    const API_BASE = "https://rapid-flower-be72truthlayer.truthlayer-ai.workers.dev";
+    // ✅ YOUR WORKER ENDPOINT
+    const API = "https://rapid-flower-be72truthlayer.truthlayer-ai.workers.dev/api/check";
+    const HEALTH = "https://rapid-flower-be72truthlayer.truthlayer-ai.workers.dev/";
 
-    const workerTxt = document.getElementById("workerTxt");
-    const healthTxt = document.getElementById("healthTxt");
-    const statusEl = document.getElementById("status");
-    const claimEl = document.getElementById("claim");
-    const linksEl = document.getElementById("links");
-    const checkBtn = document.getElementById("checkBtn");
-    const clearBtn = document.getElementById("clearBtn");
-    const resultEl = document.getElementById("result");
-    const debugEl = document.getElementById("debug");
-    const chipsEl = document.getElementById("chips");
+    const el = (id) => document.getElementById(id);
 
-    workerTxt.textContent = API_BASE;
+    const claimEl = el("claim");
+    const evidenceEl = el("evidence");
+    const statusEl = el("status");
+    const healthPill = el("healthPill");
 
-    const EXAMPLES = [
-      { label:"Phoenix capital", claim:"Phoenix is the capital of Arizona.", links:"" },
-      { label:"Bitcoin cap", claim:"Bitcoin has a maximum supply cap of 21 million coins.", links:"" },
-      { label:"Treasury debt", claim:"The U.S. national debt is tracked publicly by the U.S. Treasury.", links:"" }
-    ];
+    const verdictEl = el("verdict");
+    const badgeEl = el("badge");
+    const barFillEl = el("barFill");
+    const percentEl = el("percent");
+    const whyEl = el("why");
+    const citationsEl = el("citations");
+    const debugEl = el("debug");
 
-    function esc(s){
-      return String(s)
-        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
-    }
-    function setStatus(t){ statusEl.textContent = "Status: " + t; }
-
-    async function fetchWithTimeout(url, options={}, ms=10000){
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), ms);
-      try { return await fetch(url, { ...options, signal: controller.signal }); }
-      finally { clearTimeout(id); }
+    function setStatus(text, kind="ok") {
+      statusEl.textContent = text;
+      statusEl.className = "status " + kind;
     }
 
-    function badgeFor(conf){
-      if(conf >= 80) return {cls:"good", txt:"Strong support"};
-      if(conf >= 55) return {cls:"mid", txt:"Some support"};
-      return {cls:"bad", txt:"Weak support"};
+    function setHealth(text, good) {
+      healthPill.textContent = text;
+      healthPill.className = "pill " + (good ? "good" : "bad");
     }
 
-    function renderDebug(httpStatus, rawText){
-      debugEl.innerHTML = `
-        <div class="k">Debug</div>
-        <div class="tiny"><b>HTTP:</b> ${esc(String(httpStatus))}</div>
-        <div class="tiny" style="margin-top:8px;"><b>Raw body:</b></div>
-        <pre style="white-space:pre-wrap;margin:8px 0 0;color:rgba(234,242,255,.92);">${esc(rawText || "")}</pre>
-      `;
+    function cleanLines(text) {
+      return text
+        .split("\n")
+        .map(s => s.trim())
+        .filter(Boolean);
     }
 
-    function renderError(msg){
-      resultEl.innerHTML = `
-        <div class="k">Error</div>
-        <div class="tiny">${esc(msg)}</div>
-      `;
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, (c) => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[c]));
     }
 
-    function renderResult(data){
-      const conf = Math.max(0, Math.min(100, Number(data.confidence ?? 0)));
-      const badge = badgeFor(conf);
-      const citations = Array.isArray(data.citations) ? data.citations : [];
-      const why = Array.isArray(data.why) ? data.why : [];
-      const missing = Array.isArray(data.missing) ? data.missing : [];
+    function renderResult(data) {
+      verdictEl.textContent = data.verdict ?? "—";
+      badgeEl.textContent = data.label ?? "—";
 
-      const list = (arr) => arr.length
-        ? `<ul class="bullets">${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`
-        : `<div class="tiny">None</div>`;
+      const conf = Number(data.confidence ?? 0);
+      percentEl.textContent = conf + "%";
+      barFillEl.style.width = Math.max(0, Math.min(100, conf)) + "%";
 
-      const cites = citations.length
-        ? `<div class="cites">${
-            citations.map(c => `
-              <a class="cite" href="${esc(c.url)}" target="_blank" rel="noopener">
-                <div class="citeTitle">${esc(c.title || c.url)}</div>
-                ${c.snippet ? `<div class="citeSnippet">${esc(c.snippet)}</div>` : ""}
-                <div class="citeUrl">${esc(c.url)}</div>
-              </a>
-            `).join("")
-          }</div>`
-        : `<div class="tiny">No citations returned yet (expected without SERPER_API_KEY).</div>`;
+      // why bullets
+      whyEl.innerHTML = "";
+      const whyList = Array.isArray(data.why) ? data.why : [];
+      for (const item of whyList) {
+        const li = document.createElement("li");
+        li.textContent = item;
+        whyEl.appendChild(li);
+      }
+      if (!whyList.length) {
+        const li = document.createElement("li");
+        li.textContent = "No explanation returned.";
+        whyEl.appendChild(li);
+      }
 
-      resultEl.innerHTML = `
-        <div class="rowTop">
-          <div>
-            <div class="k">Verdict</div>
-            <div class="verdict">${esc(data.verdict || "Unclear")}</div>
-          </div>
-          <div class="badge ${badge.cls}">${badge.txt}</div>
-        </div>
+      // citations
+      const cits = Array.isArray(data.citations) ? data.citations : [];
+      if (!cits.length) {
+        citationsEl.innerHTML = '<div class="muted">None</div>';
+      } else {
+        citationsEl.innerHTML = "";
+        cits.forEach((c) => {
+          const a = document.createElement("a");
+          a.href = c.url || "#";
+          a.target = "_blank";
+          a.rel = "noreferrer";
+          a.className = "cite";
+          a.innerHTML = `<div class="citeTitle">${escapeHtml(c.title || "Source")}</div>
+                         <div class="citeUrl">${escapeHtml(c.url || "")}</div>
+                         <div class="citeSnippet">${escapeHtml(c.snippet || "")}</div>`;
+          citationsEl.appendChild(a);
+        });
+      }
 
-        <div style="margin-top:12px;">
-          <div class="k">Confidence</div>
-          <div class="barRow">
-            <div class="bar"><div class="fill" style="width:${conf}%"></div></div>
-            <div class="pct">${conf}%</div>
-          </div>
-        </div>
+      // badge color vibe
+      const label = (data.label || "").toLowerCase();
+      badgeEl.className = "badge " + (
+        label.includes("strong") ? "b-good" :
+        label.includes("some") ? "b-mid" :
+        "b-bad"
+      );
 
-        <div style="margin-top:14px;">
-          <div class="k">Brief</div>
-          <div style="line-height:1.45;color:rgba(234,242,255,.92);">${esc(data.brief || "")}</div>
-        </div>
-
-        <div style="margin-top:14px;">
-          <div class="k">Why</div>
-          ${list(why)}
-        </div>
-
-        <div style="margin-top:14px;">
-          <div class="k">What’s missing</div>
-          ${list(missing)}
-        </div>
-
-        <div style="margin-top:14px;">
-          <div class="k">Citations</div>
-          ${cites}
-        </div>
-      `;
+      debugEl.textContent = "";
     }
 
-    async function runCheck(){
+    async function checkHealth() {
+      try {
+        const r = await fetch(HEALTH, { method: "GET" });
+        const j = await r.json();
+        if (j && j.ok) setHealth("Worker: OK", true);
+        else setHealth("Worker: weird response", false);
+      } catch (e) {
+        setHealth("Worker: unreachable", false);
+      }
+    }
+
+    async function checkClaim() {
       const claim = claimEl.value.trim();
-      const evidence = linksEl.value.split("\n").map(s => s.trim()).filter(Boolean);
+      const evidenceLinks = cleanLines(evidenceEl.value);
 
-      if(!claim){
-        renderError("Type a claim first.");
-        claimEl.focus();
+      if (!claim) {
+        setStatus("Type a claim first.", "bad");
         return;
       }
 
-      setStatus("sending POST /api/check…");
+      setStatus("Checking…", "wait");
 
-      try{
-        const res = await fetchWithTimeout(`${API_BASE}/api/check`, {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ claim, evidence })
-        }, 10000);
+      try {
+        const res = await fetch(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ claim, evidenceLinks })
+        });
 
-        const raw = await res.text();
-        renderDebug(res.status, raw);
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch { throw new Error("Bad JSON: " + text.slice(0,120)); }
 
-        let data = {};
-        try { data = JSON.parse(raw || "{}"); } catch {}
-
-        if(!res.ok){
-          setStatus(`error (HTTP ${res.status})`);
-          renderError(data?.error || `API error (HTTP ${res.status})`);
+        if (!res.ok || !data.ok) {
+          debugEl.textContent = data?.error ? ("Error: " + data.error) : ("HTTP " + res.status);
+          setStatus("Error returned. See debug.", "bad");
           return;
         }
 
-        setStatus("ok ✅");
         renderResult(data);
-
-      } catch(err){
-        if(String(err).includes("AbortError")){
-          setStatus("timeout ❌");
-          renderError("Timed out after 10s. Worker unreachable / blocked.");
-          renderDebug("timeout", String(err));
-        } else {
-          setStatus("error ❌");
-          renderError(String(err));
-          renderDebug("exception", String(err));
-        }
+        setStatus("Done.", "ok");
+      } catch (err) {
+        debugEl.textContent = "Fetch failed: " + (err?.message || String(err));
+        setStatus("Status: error", "bad");
       }
     }
 
-    checkBtn.addEventListener("click", runCheck);
-
-    clearBtn.addEventListener("click", () => {
+    function clearAll() {
       claimEl.value = "";
-      linksEl.value = "";
-      setStatus("ready");
-      resultEl.innerHTML = `<div class="k">Waiting</div><div class="tiny">Run a check to see output.</div>`;
-      debugEl.innerHTML = `<div class="k">Debug</div><div class="tiny">HTTP status + raw body will appear here.</div>`;
-      claimEl.focus();
-    });
+      evidenceEl.value = "";
+      setStatus("Cleared.", "ok");
+      renderResult({ verdict:"—", label:"—", confidence:0, why:[], citations:[] });
+    }
 
-    claimEl.addEventListener("keydown", (e) => {
-      if(e.key === "Enter" && !e.shiftKey){
-        e.preventDefault();
-        runCheck();
+    function copyResult() {
+      const payload = {
+        claim: claimEl.value.trim(),
+        verdict: verdictEl.textContent,
+        confidence: percentEl.textContent,
+        why: Array.from(whyEl.querySelectorAll("li")).map(li => li.textContent),
+        citations: Array.from(citationsEl.querySelectorAll("a")).map(a => a.href)
+      };
+      navigator.clipboard.writeText(JSON.stringify(payload, null, 2))
+        .then(() => setStatus("Copied result JSON to clipboard.", "ok"))
+        .catch(() => setStatus("Copy failed (browser blocked).", "bad"));
+    }
+
+    // examples
+    const examples = {
+      az: {
+        claim: "Phoenix is the capital of Arizona.",
+        evidence: "https://az.gov/"
+      },
+      treasury: {
+        claim: "The U.S. Treasury publishes the national debt as a dataset called 'Debt to the Penny.'",
+        evidence: "https://fiscaldata.treasury.gov/datasets/debt-to-the-penny/debt-to-the-penny"
+      },
+      random: {
+        claim: "The Great Wall of China is visible from space with the naked eye.",
+        evidence: ""
       }
-    });
+    };
 
-    EXAMPLES.forEach(x => {
-      const b = document.createElement("button");
-      b.className = "chip";
-      b.type = "button";
-      b.textContent = x.label;
-      b.addEventListener("click", () => {
-        claimEl.value = x.claim;
-        linksEl.value = x.links;
-        setStatus("example loaded");
-        claimEl.focus();
+    document.querySelectorAll(".chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.example;
+        claimEl.value = examples[key].claim;
+        evidenceEl.value = examples[key].evidence;
+        setStatus("Example loaded.", "ok");
       });
-      chipsEl.appendChild(b);
     });
 
-    // Health ping
-    (async () => {
-      try{
-        const r = await fetchWithTimeout(`${API_BASE}/`, {}, 5000);
-        healthTxt.textContent = r.ok ? "OK ✅" : `HTTP ${r.status}`;
-      } catch(e){
-        healthTxt.textContent = "Unreachable ❌";
-      }
-    })();
+    el("checkBtn").addEventListener("click", checkClaim);
+    el("clearBtn").addEventListener("click", clearAll);
+    el("copyBtn").addEventListener("click", copyResult);
+
+    // allow Ctrl+Enter to check
+    [claimEl, evidenceEl].forEach(t => {
+      t.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") checkClaim();
+      });
+    });
+
+    // boot
+    checkHealth();
+    renderResult({ verdict:"—", label:"—", confidence:0, why:[], citations:[] });
   </script>
 </body>
 </html>
