@@ -7,191 +7,74 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="topbar">
-    <div class="brand">TruthLayer — Claim Check</div>
-    <div class="pill">Prototype v1 (hybrid: demo facts + user citations)</div>
-  </div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <div class="title">TruthLayer</div>
+        <div class="sub">Claim Check</div>
+      </div>
+    </div>
+
+    <div class="status">
+      <span class="pill" id="apiPill">API: not checked</span>
+    </div>
+  </header>
 
   <main class="grid">
-    <section class="panel">
+    <section class="card">
       <h2>Claim</h2>
-      <textarea id="claim" placeholder="Type a claim… (e.g., 'Capital of AZ is Phoenix')"></textarea>
+      <textarea id="claim" placeholder="Paste a claim. Example: 'The capital of Arizona is Phoenix.'"></textarea>
 
       <h3>Evidence links (optional, one per line)</h3>
-      <textarea id="evidence" placeholder="https://example.com/source"></textarea>
+      <textarea id="links" placeholder="https://example.com/source"></textarea>
 
       <div class="row">
         <button id="checkBtn">Check claim</button>
-        <button class="ghost" id="clearBtn">Clear</button>
-        <span id="status" class="status">Idle</span>
+        <button class="secondary" id="clearBtn">Clear</button>
+        <span class="mini" id="miniStatus"></span>
       </div>
 
       <div class="examples">
-        <div class="label">Examples</div>
-        <button class="chip" data-claim="Capital of AZ is Phoenix">AZ capital</button>
-        <button class="chip" data-claim="Bitcoin supply is capped at 21 million">BTC supply</button>
-        <button class="chip" data-claim="The Great Wall of China is visible from space with the naked eye">Great Wall myth</button>
-        <button class="chip" data-claim="US federal debt can be tracked to-the-penny">Treasury debt</button>
+        <div class="mini">Examples:</div>
+        <button class="chip" data-example="az">AZ capital</button>
+        <button class="chip" data-example="btc">BTC supply</button>
+        <button class="chip" data-example="debt">Treasury debt</button>
       </div>
     </section>
 
-    <section class="panel">
+    <section class="card">
       <h2>Result</h2>
 
-      <div class="resultCard">
-        <div class="resultTop">
-          <div>
-            <div class="tiny">RESULT</div>
-            <div id="verdict" class="verdict">—</div>
-            <div id="supportTag" class="tag">—</div>
-          </div>
-          <div class="scoreBox">
-            <div class="tiny">CONFIDENCE</div>
-            <div class="scoreRow">
-              <div class="bar"><div id="barFill" class="barFill"></div></div>
-              <div id="score" class="score">0%</div>
-            </div>
-          </div>
+      <div class="resultTop">
+        <div>
+          <div class="verdict" id="verdict">—</div>
+          <div class="tag" id="tag">Waiting…</div>
         </div>
-
-        <div class="tiny">WHY</div>
-        <ul id="whyList" class="bullets"></ul>
-
-        <div class="tiny">CITATIONS</div>
-        <div id="citations" class="citations">None</div>
-
-        <details class="debug">
-          <summary>Debug</summary>
-          <pre id="debugOut">{}</pre>
-        </details>
+        <div class="scoreWrap">
+          <div class="scoreLabel">Confidence</div>
+          <div class="bar"><div class="barFill" id="barFill"></div></div>
+          <div class="scoreNum" id="scoreNum">0%</div>
+        </div>
       </div>
+
+      <h3>Why</h3>
+      <ul id="why"></ul>
+
+      <h3>Citations</h3>
+      <div id="cites" class="cites"></div>
+
+      <details class="debug">
+        <summary>Debug</summary>
+        <pre id="debug"></pre>
+      </details>
     </section>
   </main>
 
-  <script>
-    // 🔧 SET THIS:
-    const WORKER_BASE = "YOUR_WORKER_URL_HERE"; // e.g. https://rapid-flower-be72truthlayer.truthlayer-ai.workers.dev
+  <footer class="foot">
+    Prototype v1 — posts to Cloudflare Worker API.
+  </footer>
 
-    const el = (id) => document.getElementById(id);
-
-    function setStatus(text, kind="") {
-      const s = el("status");
-      s.textContent = text;
-      s.dataset.kind = kind;
-    }
-
-    function renderResult(data) {
-      el("verdict").textContent = data.verdict ?? "—";
-      el("supportTag").textContent = data.support ?? "—";
-      el("supportTag").className = "tag " + (data.supportClass ?? "");
-
-      const pct = Math.round((data.confidence ?? 0) * 100);
-      el("score").textContent = pct + "%";
-      el("barFill").style.width = pct + "%";
-
-      const why = el("whyList");
-      why.innerHTML = "";
-      (data.why ?? []).forEach(line => {
-        const li = document.createElement("li");
-        li.textContent = line;
-        why.appendChild(li);
-      });
-
-      const c = el("citations");
-      const cites = data.citations ?? [];
-      if (!cites.length) {
-        c.textContent = "None";
-      } else {
-        c.innerHTML = "";
-        cites.forEach(ci => {
-          const a = document.createElement("a");
-          a.href = ci.url;
-          a.target = "_blank";
-          a.rel = "noreferrer";
-          a.className = "cite";
-          a.innerHTML = `<div class="citeTitle">${ci.title ?? ci.url}</div>
-                         <div class="citeUrl">${ci.url}</div>
-                         <div class="citeSnip">${ci.snippet ?? ""}</div>`;
-          c.appendChild(a);
-        });
-      }
-
-      el("debugOut").textContent = JSON.stringify(data, null, 2);
-    }
-
-    function parseEvidenceLines() {
-      return el("evidence").value
-        .split("\n")
-        .map(x => x.trim())
-        .filter(Boolean);
-    }
-
-    async function checkClaim() {
-      const claim = el("claim").value.trim();
-      const evidenceLinks = parseEvidenceLines();
-
-      if (!claim) {
-        setStatus("Type a claim first.", "warn");
-        return;
-      }
-
-      setStatus("Checking…", "busy");
-
-      try {
-        const res = await fetch(`${WORKER_BASE}/api/check`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ claim, evidenceLinks })
-        });
-
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); }
-        catch { data = { verdict: "Error", support: "Bad response", confidence: 0, why: [text], citations: [] }; }
-
-        if (!res.ok) {
-          setStatus(`HTTP ${res.status}`, "err");
-        } else {
-          setStatus("Checked.", "ok");
-        }
-
-        renderResult(data);
-
-      } catch (e) {
-        setStatus("Network error (failed to fetch).", "err");
-        renderResult({
-          verdict: "Error",
-          support: "Worker unreachable",
-          supportClass: "bad",
-          confidence: 0,
-          why: [
-            "Your browser could not reach the Worker endpoint.",
-            "Double-check WORKER_BASE in index.html and that your Worker is deployed.",
-            String(e)
-          ],
-          citations: []
-        });
-      }
-    }
-
-    el("checkBtn").addEventListener("click", checkClaim);
-
-    el("clearBtn").addEventListener("click", () => {
-      el("claim").value = "";
-      el("evidence").value = "";
-      renderResult({ verdict:"—", support:"—", confidence:0, why:[], citations:[] });
-      setStatus("Idle");
-    });
-
-    document.querySelectorAll(".chip").forEach(btn => {
-      btn.addEventListener("click", () => {
-        el("claim").value = btn.dataset.claim;
-        el("evidence").value = "";
-        setStatus("Loaded example.");
-      });
-    });
-
-    renderResult({ verdict:"—", support:"—", confidence:0, why:[], citations:[] });
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
