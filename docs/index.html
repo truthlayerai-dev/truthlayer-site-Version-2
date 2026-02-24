@@ -3,78 +3,177 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TruthLayer — Claim Check</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <title>TruthLayer — Claim verification with receipts</title>
+  <meta name="description" content="Paste a claim. Get a truth score with sources. Screenshot-ready Truth Cards." />
+  <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
   <header class="topbar">
-    <div class="brand">
-      <div class="dot"></div>
-      <div>
-        <div class="title">TruthLayer</div>
-        <div class="sub">Claim Check</div>
-      </div>
-    </div>
+    <div class="wrap topbar__inner">
+      <a class="brand" href="#top">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__text">
+          <span class="brand__name">TruthLayer</span>
+          <span class="brand__tag">Claim verification with receipts</span>
+        </span>
+      </a>
 
-    <div class="status">
-      <span class="pill" id="apiPill">API: not checked</span>
+      <nav class="nav">
+        <a href="#how" class="nav__link">How it works</a>
+        <a href="#examples" class="nav__link">Examples</a>
+        <a href="#pricing" class="nav__link">Pricing</a>
+      </nav>
     </div>
   </header>
 
-  <main class="grid">
-    <section class="card">
-      <h2>Claim</h2>
-      <textarea id="claim" placeholder="Paste a claim. Example: 'The capital of Arizona is Phoenix.'"></textarea>
+  <main id="top" class="wrap">
+    <!-- HERO / INPUT PANEL -->
+    <section class="panel hero">
+      <div class="hero__header">
+        <div class="kicker">TruthLayer</div>
+        <h1 class="title">Paste a claim. Get a truth score with sources.</h1>
+        <p class="subtitle">
+          We separate <b>supports</b> from <b>conflicts</b>, show <b>confidence</b>, and link <b>receipts</b>.
+          Built to be screenshot-friendly.
+        </p>
+      </div>
 
-      <h3>Evidence links (optional, one per line)</h3>
-      <textarea id="links" placeholder="https://example.com/source"></textarea>
+      <div class="field">
+        <label class="label" for="claimInput">Claim</label>
+        <textarea id="claimInput" class="textarea" placeholder="Enter a claim… (keep it short + specific)"></textarea>
+        <div class="hint">
+          Tip: remove extra opinions. The best claims are testable statements.
+        </div>
+      </div>
 
-      <div class="row">
-        <button id="checkBtn">Check claim</button>
-        <button class="secondary" id="clearBtn">Clear</button>
-        <span class="mini" id="miniStatus"></span>
+      <div class="controls">
+        <div class="limit">
+          <div class="limit__line">
+            Free checks today:
+            <span id="limitRemaining" class="limit__num">—</span>
+            remaining
+          </div>
+          <div class="limit__sub">Limit resets daily (local device).</div>
+        </div>
+
+        <div class="buttons">
+          <button id="verifyBtn" class="btn btn--primary">Verify</button>
+          <button id="clearBtn" class="btn btn--ghost">Clear</button>
+        </div>
+      </div>
+
+      <div id="status" class="status" aria-live="polite"></div>
+    </section>
+
+    <!-- RESULT -->
+    <section id="resultMount" class="spacer"></section>
+
+    <!-- HISTORY -->
+    <section class="panel">
+      <div class="panel__head">
+        <h2 class="h2">History</h2>
+        <div class="muted">Saved locally • last 20 Truth Cards</div>
+      </div>
+
+      <div id="historyList" class="history"></div>
+      <div class="panel__foot">
+        <button id="clearHistoryBtn" class="btn btn--ghost btn--small">Clear history</button>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how" class="panel">
+      <div class="panel__head">
+        <h2 class="h2">How it works</h2>
+        <div class="muted">Boring, structured, and hard to argue with.</div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card__title">1) Paste a claim</div>
+          <div class="card__text">Short, testable claims verify best.</div>
+        </div>
+        <div class="card">
+          <div class="card__title">2) Gather sources</div>
+          <div class="card__text">We link sources in a new tab to avoid embedded errors.</div>
+        </div>
+        <div class="card">
+          <div class="card__title">3) Separate evidence</div>
+          <div class="card__text">Supports and conflicts are split to reduce spin.</div>
+        </div>
+        <div class="card">
+          <div class="card__title">4) Output a Truth Card</div>
+          <div class="card__text">Score + verdict + confidence + receipts. Screenshot-ready.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXAMPLES -->
+    <section id="examples" class="panel">
+      <div class="panel__head">
+        <h2 class="h2">Examples</h2>
+        <div class="muted">Same format as real output.</div>
       </div>
 
       <div class="examples">
-        <div class="mini">Examples:</div>
-        <button class="chip" data-example="az">AZ capital</button>
-        <button class="chip" data-example="btc">BTC supply</button>
-        <button class="chip" data-example="debt">Treasury debt</button>
+        <button class="exampleBtn" data-example="0">“The Great Wall is visible from space with the naked eye.”</button>
+        <button class="exampleBtn" data-example="1">“Humans use only 10% of their brain.”</button>
+        <button class="exampleBtn" data-example="2">“Vitamin C prevents the common cold.”</button>
       </div>
     </section>
 
-    <section class="card">
-      <h2>Result</h2>
-
-      <div class="resultTop">
-        <div>
-          <div class="verdict" id="verdict">—</div>
-          <div class="tag" id="tag">Waiting…</div>
-        </div>
-        <div class="scoreWrap">
-          <div class="scoreLabel">Confidence</div>
-          <div class="bar"><div class="barFill" id="barFill"></div></div>
-          <div class="scoreNum" id="scoreNum">0%</div>
-        </div>
+    <!-- PRICING -->
+    <section id="pricing" class="panel">
+      <div class="panel__head">
+        <h2 class="h2">Pricing</h2>
+        <div class="muted">Pay for capacity + convenience. Truth stays source-backed either way.</div>
       </div>
 
-      <h3>Why</h3>
-      <ul id="why"></ul>
+      <div class="pricing">
+        <div class="priceCard">
+          <div class="priceCard__tier">Free</div>
+          <div class="priceCard__price">$0</div>
+          <ul class="list">
+            <li>5 checks/day</li>
+            <li>Truth Card format</li>
+            <li>Sources open in new tab</li>
+            <li>Local history</li>
+          </ul>
+        </div>
 
-      <h3>Citations</h3>
-      <div id="cites" class="cites"></div>
+        <div class="priceCard priceCard--pro">
+          <div class="priceCard__tier">Pro</div>
+          <div class="priceCard__price">$5 <span class="muted">/ month</span></div>
+          <ul class="list">
+            <li>Higher limits</li>
+            <li>Saved history (cloud later)</li>
+            <li>Export/share links (next)</li>
+            <li>Collections (later)</li>
+          </ul>
+          <button class="btn btn--primary btn--full" disabled>Subscribe (placeholder)</button>
+          <div class="tiny muted">Stripe integration next.</div>
+        </div>
 
-      <details class="debug">
-        <summary>Debug</summary>
-        <pre id="debug"></pre>
-      </details>
+        <div class="priceCard">
+          <div class="priceCard__tier">Team</div>
+          <div class="priceCard__price">Custom</div>
+          <ul class="list">
+            <li>Shared libraries</li>
+            <li>Audit trail</li>
+            <li>Admin + roles</li>
+          </ul>
+        </div>
+      </div>
     </section>
+
+    <footer class="footer">
+      <div class="muted">
+        © <span id="year"></span> TruthLayer • Model-assisted summaries • Not legal/medical/financial advice
+      </div>
+    </footer>
   </main>
 
-  <footer class="foot">
-    Prototype v1 — posts to Cloudflare Worker API.
-  </footer>
-
-  <script src="./app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
