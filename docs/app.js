@@ -3,6 +3,7 @@
 const FREE_PER_DAY = 5;
 const HISTORY_KEY = "truthlayer.history.v1";
 const LIMIT_KEY = "truthlayer.limit.v1";
+const PRO_EMAIL_KEY = "truthlayer.pro.email.v1";
 
 const el = (id) => document.getElementById(id);
 
@@ -15,6 +16,11 @@ const resultMount = el("resultMount");
 const limitRemaining = el("limitRemaining");
 const historyList = el("historyList");
 const clearHistoryBtn = el("clearHistoryBtn");
+
+const pricingMsg = el("pricingMsg");
+const proEmail = el("proEmail");
+const proBtn = el("proBtn");
+const proMsg = el("proMsg");
 
 const year = el("year");
 year.textContent = String(new Date().getFullYear());
@@ -78,7 +84,7 @@ function renderHistory(){
     return;
   }
 
-  items.forEach((h, i) => {
+  items.forEach((h) => {
     const div = document.createElement("div");
     div.className = "historyItem";
     div.innerHTML = `
@@ -93,12 +99,20 @@ function renderHistory(){
   });
 }
 
-/* ---------- UI helpers ---------- */
+/* ---------- messages ---------- */
 function setStatus(msg, type){
   statusEl.classList.remove("status--error", "status--ok");
   if(type === "error") statusEl.classList.add("status--error");
   if(type === "ok") statusEl.classList.add("status--ok");
   statusEl.textContent = msg || "";
+}
+
+function setPricingMsg(msg, type){
+  if(!pricingMsg) return;
+  pricingMsg.classList.remove("status--error", "status--ok");
+  if(type === "error") pricingMsg.classList.add("status--error");
+  if(type === "ok") pricingMsg.classList.add("status--ok");
+  pricingMsg.textContent = msg || "";
 }
 
 function escapeHTML(str){
@@ -108,6 +122,10 @@ function escapeHTML(str){
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function isValidEmail(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim());
 }
 
 /* ---------- verification (v1 stub) ----------
@@ -160,7 +178,7 @@ async function verifyClaim(claim){
     ],
     conflicts: [
       "Scoring is currently heuristic (not yet grounded in retrieved sources).",
-      "Real verification should weight primary sources higher than blogs."
+      "Real verification should weight primary sources higher than random blogs."
     ],
     sources: [
       { title: "Encyclopaedia Britannica (example)", url: "https://www.britannica.com/" },
@@ -308,7 +326,8 @@ verifyBtn.addEventListener("click", async () => {
 
   const remaining = renderLimit();
   if(remaining <= 0){
-    setStatus("Daily free limit reached. See Pricing for Pro.", "error");
+    setStatus("Daily free limit reached.", "error");
+    setPricingMsg("Daily free limit reached. Upgrade to Pro for higher limits.", "error");
     window.location.hash = "#pricing";
     return;
   }
@@ -318,6 +337,7 @@ verifyBtn.addEventListener("click", async () => {
   setUsed((st.used || 0) + 1);
 
   setStatus("Analyzing… building Truth Card…", "");
+  setPricingMsg("", "");
   verifyBtn.disabled = true;
 
   try{
@@ -344,6 +364,7 @@ clearHistoryBtn.addEventListener("click", () => {
   setStatus("History cleared.", "ok");
 });
 
+/* example buttons */
 document.querySelectorAll(".exampleBtn").forEach(btn => {
   btn.addEventListener("click", () => {
     const idx = Number(btn.getAttribute("data-example"));
@@ -351,11 +372,36 @@ document.querySelectorAll(".exampleBtn").forEach(btn => {
     renderTruthCard(r);
     saveToHistory(r);
     setStatus("Loaded example Truth Card.", "ok");
+    setPricingMsg("", "");
     window.scrollTo({ top: resultMount.offsetTop - 80, behavior: "smooth" });
   });
 });
+
+/* pro email capture */
+try{
+  const saved = localStorage.getItem(PRO_EMAIL_KEY);
+  if(saved && proEmail) proEmail.value = saved;
+}catch{}
+
+if(proBtn){
+  proBtn.addEventListener("click", () => {
+    const email = (proEmail?.value || "").trim();
+
+    if(!isValidEmail(email)){
+      proMsg.textContent = "Enter a valid email to get early access.";
+      proMsg.style.color = "rgba(255, 170, 170, 0.95)";
+      return;
+    }
+
+    localStorage.setItem(PRO_EMAIL_KEY, email);
+    proMsg.textContent = "Saved. You’re on the early access list.";
+    proMsg.style.color = "rgba(180, 255, 220, 0.95)";
+  });
+}
 
 /* ---------- init ---------- */
 renderLimit();
 renderHistory();
 setStatus("", "");
+setPricingMsg("", "");
+const FREE_PER_DAY = 1;
