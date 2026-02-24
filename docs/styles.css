@@ -184,7 +184,7 @@ b{ font-weight: 650; }
 .btn--full{ width: 100%; margin-top: 10px; }
 
 .status{
-  margin-top: 14px;
+  padding: 0 20px 10px;
   min-height: 18px;
   font-size: 13px;
   color: rgba(var(--muted), 0.95);
@@ -284,6 +284,7 @@ b{ font-weight: 650; }
 }
 .tiny{ font-size: 12px; }
 
+/* How / Examples / Pricing layout */
 .h2{ margin: 0; font-size: 18px; letter-spacing: -0.2px; }
 .muted{ color: rgba(var(--muted), 0.95); font-size: 13px; }
 
@@ -347,6 +348,30 @@ b{ font-weight: 650; }
 .list{ margin: 12px 0 0; padding-left: 18px; color: rgba(var(--text), 0.78); }
 .list li{ margin: 6px 0; }
 
+/* Pro email capture */
+.input{
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--border), 0.10);
+  background: rgba(0,0,0,0.28);
+  color: rgba(var(--text), 0.92);
+  outline: none;
+}
+.input:focus{
+  border-color: rgba(var(--border), 0.18);
+  box-shadow: 0 0 0 1px rgba(var(--accent), 0.18) inset;
+}
+.proBox{
+  margin-top: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--border), 0.10);
+  background: rgba(255,255,255,0.03);
+  padding: 14px;
+}
+
+/* History */
 .history{
   padding: 0 20px 10px;
   display: grid;
