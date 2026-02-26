@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TruthLayer — Claim verification with receipts</title>
-  <meta name="description" content="Paste a claim. Get a truth score with sources. Screenshot-ready Truth Cards." />
+  <title>TruthLayer — Paste a claim. Get receipts.</title>
+  <meta name="description" content="TruthLayer verifies claims with a truth score, explanation, evidence snippets, and source links. Built to be screenshot-friendly." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
   <header class="topbar">
     <div class="wrap topbar__inner">
-      <a class="brand" href="#top">
+      <a class="brand" href="#top" aria-label="TruthLayer home">
         <span class="brand__mark" aria-hidden="true"></span>
         <span class="brand__text">
           <span class="brand__name">TruthLayer</span>
-          <span class="brand__tag">Claim verification with receipts</span>
+          <span class="brand__tag">Truth, with links.</span>
         </span>
       </a>
 
@@ -32,18 +32,24 @@
     <section class="panel hero">
       <div class="hero__header">
         <div class="kicker">TruthLayer</div>
-        <h1 class="title">Paste a claim. Get a truth score with sources.</h1>
+        <h1 class="title">Paste a claim. Get receipts.</h1>
         <p class="subtitle">
-          We separate <b>supports</b> from <b>conflicts</b>, show <b>confidence</b>, and link <b>receipts</b>.
-          Built to be screenshot-friendly.
+          TruthLayer returns a <b>truth score</b>, a <b>status</b>, and short evidence snippets with <b>clickable sources</b>.
+          When the evidence is unclear or conflicting, we say so.
         </p>
       </div>
 
       <div class="field">
         <label class="label" for="claimInput">Claim</label>
-        <textarea id="claimInput" class="textarea" placeholder="Enter a claim… (keep it short + specific)"></textarea>
-        <div class="hint">
-          Tip: remove extra opinions. The best claims are testable statements.
+        <textarea id="claimInput" class="textarea" placeholder="Example: “Cracking your knuckles causes arthritis.”"></textarea>
+
+        <div class="helperRow">
+          <div class="hint">
+            Keep it specific. Good: “Humans use only 10% of their brain.” Bad: “Everything is a lie.”
+          </div>
+          <div class="microHint">
+            We show uncertainty when sources disagree.
+          </div>
         </div>
       </div>
 
@@ -54,7 +60,7 @@
             <span id="limitRemaining" class="limit__num">—</span>
             remaining
           </div>
-          <div class="limit__sub">Limit resets daily (local device).</div>
+          <div class="limit__sub">Limit resets daily (on this device).</div>
         </div>
 
         <div class="buttons">
@@ -75,9 +81,7 @@
         <h2 class="h2">History</h2>
         <div class="muted">Saved locally • last 20 Truth Cards</div>
       </div>
-
       <div id="historyList" class="history"></div>
-
       <div class="panel__foot">
         <button id="clearHistoryBtn" class="btn btn--ghost btn--small">Clear history</button>
       </div>
@@ -87,25 +91,25 @@
     <section id="how" class="panel">
       <div class="panel__head">
         <h2 class="h2">How it works</h2>
-        <div class="muted">Boring, structured, and hard to argue with.</div>
+        <div class="muted">Retrieve sources → extract evidence → score conservatively.</div>
       </div>
 
       <div class="grid">
         <div class="card">
           <div class="card__title">1) Paste a claim</div>
-          <div class="card__text">Short, testable claims verify best.</div>
+          <div class="card__text">Short, testable statements verify best.</div>
         </div>
         <div class="card">
           <div class="card__title">2) Gather sources</div>
-          <div class="card__text">We link sources in a new tab to avoid embedded errors.</div>
+          <div class="card__text">We retrieve relevant sources and link them directly.</div>
         </div>
         <div class="card">
-          <div class="card__title">3) Separate evidence</div>
-          <div class="card__text">Supports and conflicts are split to reduce spin.</div>
+          <div class="card__title">3) Compare evidence</div>
+          <div class="card__text">Supports vs conflicts are separated to reduce spin.</div>
         </div>
         <div class="card">
           <div class="card__title">4) Output a Truth Card</div>
-          <div class="card__text">Score + verdict + confidence + receipts. Screenshot-ready.</div>
+          <div class="card__text">Score + status + confidence + receipts. Screenshot-friendly.</div>
         </div>
       </div>
     </section>
@@ -114,13 +118,14 @@
     <section id="examples" class="panel">
       <div class="panel__head">
         <h2 class="h2">Examples</h2>
-        <div class="muted">Same format as real output.</div>
+        <div class="muted">Try one-click claims that show the product well.</div>
       </div>
 
       <div class="examples">
-        <button class="exampleBtn" data-example="0">“The Great Wall of China is visible from space with the naked eye.”</button>
-        <button class="exampleBtn" data-example="1">“Humans use only 10% of their brain.”</button>
-        <button class="exampleBtn" data-example="2">“Vitamin C prevents the common cold.”</button>
+        <button class="exampleBtn" data-claim="Humans use only 10% of their brain.">“Humans use only 10% of their brain.”</button>
+        <button class="exampleBtn" data-claim="The Great Wall of China is visible from space with the naked eye.">“The Great Wall is visible from space with the naked eye.”</button>
+        <button class="exampleBtn" data-claim="Cracking your knuckles causes arthritis.">“Cracking your knuckles causes arthritis.”</button>
+        <button class="exampleBtn" data-claim="Lightning never strikes the same place twice.">“Lightning never strikes the same place twice.”</button>
       </div>
     </section>
 
@@ -139,7 +144,7 @@
           <div class="priceCard__price">$0</div>
           <ul class="list">
             <li>5 checks/day</li>
-            <li>Truth Card format</li>
+            <li>Truth Card output</li>
             <li>Sources open in new tab</li>
             <li>Local history</li>
           </ul>
@@ -151,7 +156,7 @@
 
           <ul class="list">
             <li>Higher limits (near-unlimited)</li>
-            <li>Export / share Truth Cards</li>
+            <li>Copy + PDF export</li>
             <li>Cloud history (later)</li>
             <li>Collections (later)</li>
           </ul>
@@ -182,7 +187,7 @@
 
     <footer class="footer">
       <div class="muted">
-        © <span id="year"></span> TruthLayer • Model-assisted summaries • Not legal/medical/financial advice
+        © <span id="year"></span> TruthLayer • Conservative, source-backed summaries • Not legal/medical/financial advice
       </div>
     </footer>
   </main>
