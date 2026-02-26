@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[TruthLayer] app.js loaded ✅");
 
-  // ✅ SET THIS to your Cloudflare Worker base URL (no trailing slash)
+  // ✅ PASTE YOUR CLOUDFLARE WORKER BASE URL HERE (no trailing slash)
   // Example: https://rapid-flower-be72truthlayer.your-account.workers.dev
   const WORKER_BASE_URL = "PASTE_YOUR_WORKER_URL_HERE";
 
@@ -29,16 +29,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const year = el("year");
   if (year) year.textContent = String(new Date().getFullYear());
-
-  const missing = [];
-  ["claimInput","verifyBtn","status","resultMount","limitRemaining","historyList"].forEach(id=>{
-    if(!el(id)) missing.push(id);
-  });
-  if (missing.length) {
-    console.error("[TruthLayer] Missing elements:", missing);
-    alert("TruthLayer setup error: missing IDs: " + missing.join(", "));
-    return;
-  }
 
   // ---------- helpers ----------
   const todayKey = () => new Date().toISOString().slice(0, 10);
@@ -71,6 +61,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim());
   }
 
+  function titleCase(s) {
+    return String(s || "")
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (m) => m.toUpperCase());
+  }
+
   function pillClassForStatus(status) {
     const s = String(status || "").toLowerCase();
     if (s === "supported") return "pill--supported";
@@ -79,10 +75,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return "pill--unknown";
   }
 
-  function titleCase(s) {
-    return String(s || "")
-      .replaceAll("_", " ")
-      .replace(/\b\w/g, (m) => m.toUpperCase());
+  // Detect “multi-question” inputs (cheap but useful)
+  function looksLikeMultipleQuestions(text) {
+    const t = String(text || "").trim();
+    if (!t) return false;
+    const qMarks = (t.match(/\?/g) || []).length;
+    const andCount = (t.toLowerCase().match(/\band\b/g) || []).length;
+    return qMarks >= 2 || (qMarks >= 1 && andCount >= 1);
   }
 
   // ---------- daily limit ----------
@@ -146,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
       div.className = "historyItem";
       div.innerHTML = `
         <div class="historyItem__claim">“${escapeHTML(h.claim)}”</div>
-        <div class="historyItem__meta">${escapeHTML(titleCase(h.status || h.verdict || "unknown"))} • ${h.truth_score ?? h.score ?? "?"}/100 • ${new Date(h.checkedAtISO).toLocaleString()}</div>
+        <div class="historyItem__meta">${escapeHTML(titleCase(h.status))} • ${h.truth_score}/100 • ${new Date(h.checkedAtISO).toLocaleString()}</div>
       `;
       div.addEventListener("click", () => {
         renderTruthCard(h);
@@ -156,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- API call ----------
+  // ---------- API ----------
   async function verifyClaim(claim) {
     if (!WORKER_BASE_URL || WORKER_BASE_URL.includes("PASTE_YOUR_WORKER_URL_HERE")) {
       throw new Error("WORKER_BASE_URL not set in app.js");
@@ -172,55 +171,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const t = await res.text();
       throw new Error(t || `API error (${res.status})`);
     }
+
     return res.json();
   }
 
-  // ---------- normalize backend response to schema ----------
-  function normalizeResult(raw) {
-    // Supports your new schema or older {score, verdict, confidence}
-    const claim = raw.claim || "";
-    const claim_type = raw.claim_type || "ambiguous";
-
-    let status = raw.status;
-    let truth_score = raw.truth_score;
-
-    // backwards compatibility
-    if (!status && raw.verdict) {
-      const v = String(raw.verdict).toLowerCase();
-      status =
-        v.includes("true") ? "supported" :
-        v.includes("false") ? "refuted" :
-        v.includes("mixed") ? "mixed" : "unknown";
-    }
-    if (truth_score == null && raw.score != null) truth_score = raw.score;
-
-    const confidence = raw.confidence || "low";
-
-    const summary = raw.summary || raw.explanation || "";
-    const supports = Array.isArray(raw.supports) ? raw.supports : [];
-    const conflicts = Array.isArray(raw.conflicts) ? raw.conflicts : [];
-
-    const sources = Array.isArray(raw.sources) ? raw.sources : [];
-    const checkedAtISO = raw.checkedAtISO || new Date().toISOString();
-    const methodNote = raw.methodNote || "";
-
-    return {
-      claim,
-      claim_type,
-      status: status || "unknown",
-      truth_score: Number.isFinite(Number(truth_score)) ? Math.round(Number(truth_score)) : 50,
-      confidence: String(confidence).toLowerCase(),
-      summary,
-      supports,
-      conflicts,
-      sources,
-      checkedAtISO,
-      methodNote,
-      notes: raw.notes || { assumptions: [], unknowns: [] }
-    };
-  }
-
-  // ---------- Copy / Print helpers ----------
+  // ---------- Copy / Print ----------
   function buildCopyText(r) {
     const statusLine = `Status: ${titleCase(r.status)} | Score: ${r.truth_score}/100 | Confidence: ${titleCase(r.confidence)}`;
     const topSources = (r.sources || []).slice(0, 3).map((s) => `- ${s.title || s.url}: ${s.url}`).join("\n");
@@ -230,6 +185,12 @@ document.addEventListener("DOMContentLoaded", () => {
       statusLine,
       ``,
       `Summary: ${r.summary}`,
+      ``,
+      `Supports:`,
+      ...(r.supports || []).slice(0, 4).map(x => `- ${x.snippet || x}`),
+      ``,
+      `Conflicts/Caveats:`,
+      ...(r.conflicts || []).slice(0, 4).map(x => `- ${x.snippet || x}`),
       ``,
       `Sources:`,
       topSources || "(none)"
@@ -241,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
       await navigator.clipboard.writeText(text);
       setStatus("Copied Truth Card text.", "ok");
     } catch {
-      // fallback
       const ta = document.createElement("textarea");
       ta.value = text;
       document.body.appendChild(ta);
@@ -252,19 +212,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ---------- Truth Card rendering ----------
+  // ---------- Render Truth Card ----------
   function renderTruthCard(r) {
     const statusClass = pillClassForStatus(r.status);
 
-    // supports/conflicts may be either strings or {snippet, source_id}
-    const fmtItem = (x) => {
-      if (typeof x === "string") return x;
-      if (x && typeof x === "object") return x.snippet || JSON.stringify(x);
-      return String(x);
-    };
+    const supportsHtml = (r.supports || []).slice(0, 4)
+      .map(x => `<li>${escapeHTML(x.snippet || String(x))}</li>`).join("");
 
-    const supportsHtml = (r.supports || []).slice(0, 4).map(x => `<li>${escapeHTML(fmtItem(x))}</li>`).join("");
-    const conflictsHtml = (r.conflicts || []).slice(0, 4).map(x => `<li>${escapeHTML(fmtItem(x))}</li>`).join("");
+    const conflictsHtml = (r.conflicts || []).slice(0, 4)
+      .map(x => `<li>${escapeHTML(x.snippet || String(x))}</li>`).join("");
 
     const sourcesHtml = (r.sources || []).slice(0, 3).map(s => `
       <a class="source" href="${escapeHTML(s.url)}" target="_blank" rel="noreferrer">
@@ -302,24 +258,18 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="cols">
             <div class="box">
               <div class="sectionTitle">Supports</div>
-              <ul class="ul">
-                ${supportsHtml || "<li>No strong supporting evidence found in retrieved sources.</li>"}
-              </ul>
+              <ul class="ul">${supportsHtml || "<li>No strong supporting evidence found.</li>"}</ul>
             </div>
 
             <div class="box">
               <div class="sectionTitle">Conflicts / caveats</div>
-              <ul class="ul">
-                ${conflictsHtml || "<li>No strong conflicting evidence found in retrieved sources.</li>"}
-              </ul>
+              <ul class="ul">${conflictsHtml || "<li>No strong conflicting evidence found.</li>"}</ul>
             </div>
           </div>
 
           <div class="box">
             <div class="sectionTitle">Sources</div>
-            <div class="sources">
-              ${sourcesHtml || "<div class='tiny muted'>No sources returned.</div>"}
-            </div>
+            <div class="sources">${sourcesHtml || "<div class='tiny muted'>No sources returned.</div>"}</div>
             <div class="tiny muted" style="margin-top:10px;">
               Tip: sources open in a new tab to prevent embedded-page errors.
             </div>
@@ -328,18 +278,22 @@ document.addEventListener("DOMContentLoaded", () => {
       </section>
     `;
 
-    // wire actions
     const copyBtn = document.getElementById("copyBtn");
     const printBtn = document.getElementById("printBtn");
     if (copyBtn) copyBtn.addEventListener("click", () => copyToClipboard(buildCopyText(r)));
     if (printBtn) printBtn.addEventListener("click", () => window.print());
   }
 
-  // ---------- events ----------
+  // ---------- Verify flow ----------
   verifyBtn.addEventListener("click", async () => {
     const claim = String(claimInput.value || "").trim();
     if (!claim) {
       setStatus("Enter a claim first.", "error");
+      return;
+    }
+
+    if (looksLikeMultipleQuestions(claim)) {
+      setStatus("Looks like multiple questions. Rewrite as ONE claim for best results.", "error");
       return;
     }
 
@@ -351,7 +305,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // consume a use
     const st = getLimitState();
     setUsed((st.used || 0) + 1);
 
@@ -360,8 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
     verifyBtn.disabled = true;
 
     try {
-      const raw = await verifyClaim(claim);
-      const r = normalizeResult(raw);
+      const r = await verifyClaim(claim);
       renderTruthCard(r);
       saveToHistory(r);
       setStatus("Truth Card generated.", "ok");
@@ -389,11 +341,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Example buttons: fill claim box + verify
+  // Examples load into box
   document.querySelectorAll(".exampleBtn").forEach(btn => {
     btn.addEventListener("click", () => {
-      const c = btn.getAttribute("data-claim") || "";
-      claimInput.value = c;
+      claimInput.value = btn.getAttribute("data-claim") || "";
       window.scrollTo({ top: 0, behavior: "smooth" });
       setStatus("Example loaded. Click Verify.", "ok");
     });
