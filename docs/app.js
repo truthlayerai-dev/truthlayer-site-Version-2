@@ -1,7 +1,9 @@
-/* ========= TruthLayer v1 — Static-site logic (bulletproof) ========= */
-
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[TruthLayer] app.js loaded ✅");
+
+  // ✅ SET THIS to your Cloudflare Worker base URL (no trailing slash)
+  // Example: https://rapid-flower-be72truthlayer.your-account.workers.dev
+  const WORKER_BASE_URL = "PASTE_YOUR_WORKER_URL_HERE";
 
   const FREE_PER_DAY = 5;
   const HISTORY_KEY = "truthlayer.history.v1";
@@ -28,25 +30,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const year = el("year");
   if (year) year.textContent = String(new Date().getFullYear());
 
-  // If any critical element is missing, show a clear error
   const missing = [];
-  if (!claimInput) missing.push("claimInput");
-  if (!verifyBtn) missing.push("verifyBtn");
-  if (!statusEl) missing.push("status");
-  if (!resultMount) missing.push("resultMount");
-  if (!limitRemaining) missing.push("limitRemaining");
-  if (!historyList) missing.push("historyList");
-
+  ["claimInput","verifyBtn","status","resultMount","limitRemaining","historyList"].forEach(id=>{
+    if(!el(id)) missing.push(id);
+  });
   if (missing.length) {
     console.error("[TruthLayer] Missing elements:", missing);
-    alert("TruthLayer setup error: missing IDs: " + missing.join(", ") + "\n\nFix: ensure index.html uses the latest code + IDs match.");
-    return; // stop so we don’t crash later
+    alert("TruthLayer setup error: missing IDs: " + missing.join(", "));
+    return;
   }
 
-  /* ---------- helpers ---------- */
+  // ---------- helpers ----------
   const todayKey = () => new Date().toISOString().slice(0, 10);
 
-  function escapeHTML(str){
+  function escapeHTML(str) {
     return String(str)
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
@@ -55,77 +52,91 @@ document.addEventListener("DOMContentLoaded", () => {
       .replaceAll("'", "&#039;");
   }
 
-  function setStatus(msg, type){
+  function setStatus(msg, type) {
     statusEl.classList.remove("status--error", "status--ok");
-    if(type === "error") statusEl.classList.add("status--error");
-    if(type === "ok") statusEl.classList.add("status--ok");
+    if (type === "error") statusEl.classList.add("status--error");
+    if (type === "ok") statusEl.classList.add("status--ok");
     statusEl.textContent = msg || "";
   }
 
-  function setPricingMsg(msg, type){
-    if(!pricingMsg) return;
+  function setPricingMsg(msg, type) {
+    if (!pricingMsg) return;
     pricingMsg.classList.remove("status--error", "status--ok");
-    if(type === "error") pricingMsg.classList.add("status--error");
-    if(type === "ok") pricingMsg.classList.add("status--ok");
+    if (type === "error") pricingMsg.classList.add("status--error");
+    if (type === "ok") pricingMsg.classList.add("status--ok");
     pricingMsg.textContent = msg || "";
   }
 
-  function isValidEmail(email){
+  function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim());
   }
 
-  /* ---------- daily limit ---------- */
-  function getLimitState(){
-    try{
+  function pillClassForStatus(status) {
+    const s = String(status || "").toLowerCase();
+    if (s === "supported") return "pill--supported";
+    if (s === "refuted") return "pill--refuted";
+    if (s === "mixed") return "pill--mixed";
+    return "pill--unknown";
+  }
+
+  function titleCase(s) {
+    return String(s || "")
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (m) => m.toUpperCase());
+  }
+
+  // ---------- daily limit ----------
+  function getLimitState() {
+    try {
       const raw = localStorage.getItem(LIMIT_KEY);
       const st = raw ? JSON.parse(raw) : null;
       const day = todayKey();
-      if(!st || st.day !== day){
+      if (!st || st.day !== day) {
         const fresh = { day, used: 0 };
         localStorage.setItem(LIMIT_KEY, JSON.stringify(fresh));
         return fresh;
       }
       return st;
-    }catch{
+    } catch {
       return { day: todayKey(), used: 0 };
     }
   }
 
-  function setUsed(used){
+  function setUsed(used) {
     localStorage.setItem(LIMIT_KEY, JSON.stringify({ day: todayKey(), used }));
     renderLimit();
   }
 
-  function renderLimit(){
+  function renderLimit() {
     const st = getLimitState();
     const remaining = Math.max(0, FREE_PER_DAY - (st.used || 0));
     limitRemaining.textContent = String(remaining);
     return remaining;
   }
 
-  /* ---------- history ---------- */
-  function loadHistory(){
+  // ---------- history ----------
+  function loadHistory() {
     try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
     catch { return []; }
   }
 
-  function saveToHistory(item){
+  function saveToHistory(item) {
     const prev = loadHistory();
     const next = [item, ...prev].slice(0, 20);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
     renderHistory();
   }
 
-  function clearHistory(){
+  function clearHistory() {
     localStorage.removeItem(HISTORY_KEY);
     renderHistory();
   }
 
-  function renderHistory(){
+  function renderHistory() {
     const items = loadHistory();
     historyList.innerHTML = "";
 
-    if(items.length === 0){
+    if (items.length === 0) {
       historyList.innerHTML = `<div class="muted">No saved Truth Cards yet.</div>`;
       return;
     }
@@ -135,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
       div.className = "historyItem";
       div.innerHTML = `
         <div class="historyItem__claim">“${escapeHTML(h.claim)}”</div>
-        <div class="historyItem__meta">${escapeHTML(h.verdict)} • ${h.score}/100 • ${new Date(h.checkedAtISO).toLocaleString()}</div>
+        <div class="historyItem__meta">${escapeHTML(titleCase(h.status || h.verdict || "unknown"))} • ${h.truth_score ?? h.score ?? "?"}/100 • ${new Date(h.checkedAtISO).toLocaleString()}</div>
       `;
       div.addEventListener("click", () => {
         renderTruthCard(h);
@@ -145,82 +156,146 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ---------- verification stub ---------- */
-  function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+  // ---------- API call ----------
+  async function verifyClaim(claim) {
+    if (!WORKER_BASE_URL || WORKER_BASE_URL.includes("PASTE_YOUR_WORKER_URL_HERE")) {
+      throw new Error("WORKER_BASE_URL not set in app.js");
+    }
 
-  function heuristicScore(claim){
-    const c = claim.toLowerCase();
-    let score = 55;
+    const res = await fetch(`${WORKER_BASE_URL}/api/check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ claim })
+    });
 
-    if(c.includes("always") || c.includes("never")) score -= 10;
-    if(c.includes("guaranteed") || c.includes("100%")) score -= 12;
-    if(c.includes("i heard") || c.includes("someone said") || c.includes("they say")) score -= 8;
-
-    if(c.includes("cdc") || c.includes("who") || c.includes("nasa") || c.includes("nih")) score += 8;
-
-    score = clamp(score, 0, 100);
-
-    let verdict = "Mixed";
-    if(score >= 85) verdict = "True";
-    else if(score >= 70) verdict = "Mostly True";
-    else if(score >= 55) verdict = "Mixed";
-    else if(score >= 40) verdict = "Mostly False";
-    else if(score >= 25) verdict = "False";
-    else verdict = "Unclear";
-
-    let confidence = "Medium";
-    if(score >= 75 || score <= 25) confidence = "High";
-    else if(score >= 60 || score <= 40) confidence = "Medium";
-    else confidence = "Low";
-
-    return { score, verdict, confidence };
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(t || `API error (${res.status})`);
+    }
+    return res.json();
   }
 
-  async function verifyClaim(claim){
-    const { score, verdict, confidence } = heuristicScore(claim);
+  // ---------- normalize backend response to schema ----------
+  function normalizeResult(raw) {
+    // Supports your new schema or older {score, verdict, confidence}
+    const claim = raw.claim || "";
+    const claim_type = raw.claim_type || "ambiguous";
+
+    let status = raw.status;
+    let truth_score = raw.truth_score;
+
+    // backwards compatibility
+    if (!status && raw.verdict) {
+      const v = String(raw.verdict).toLowerCase();
+      status =
+        v.includes("true") ? "supported" :
+        v.includes("false") ? "refuted" :
+        v.includes("mixed") ? "mixed" : "unknown";
+    }
+    if (truth_score == null && raw.score != null) truth_score = raw.score;
+
+    const confidence = raw.confidence || "low";
+
+    const summary = raw.summary || raw.explanation || "";
+    const supports = Array.isArray(raw.supports) ? raw.supports : [];
+    const conflicts = Array.isArray(raw.conflicts) ? raw.conflicts : [];
+
+    const sources = Array.isArray(raw.sources) ? raw.sources : [];
+    const checkedAtISO = raw.checkedAtISO || new Date().toISOString();
+    const methodNote = raw.methodNote || "";
+
     return {
       claim,
-      score,
-      verdict,
-      confidence,
-      summary:
-        "This is a v1 Truth Card format. The engine is currently a structured stub so the UI is perfect first. Next step is real retrieval + source-grounded scoring.",
-      supports: [
-        "Claim is specific enough to evaluate.",
-        "Output separates supporting evidence from conflicts/caveats."
-      ],
-      conflicts: [
-        "Scoring is currently heuristic (not yet grounded in retrieved sources).",
-        "Real verification should weight primary sources higher than random blogs."
-      ],
-      sources: [
-        { title: "Encyclopaedia Britannica (example)", url: "https://www.britannica.com/" },
-        { title: "Wikipedia (example)", url: "https://en.wikipedia.org/wiki/Main_Page" }
-      ],
-      checkedAtISO: new Date().toISOString(),
-      methodNote: "UI-first build • Sources open in new tab • Replace stub with real retrieval next."
+      claim_type,
+      status: status || "unknown",
+      truth_score: Number.isFinite(Number(truth_score)) ? Math.round(Number(truth_score)) : 50,
+      confidence: String(confidence).toLowerCase(),
+      summary,
+      supports,
+      conflicts,
+      sources,
+      checkedAtISO,
+      methodNote,
+      notes: raw.notes || { assumptions: [], unknowns: [] }
     };
   }
 
-  function renderTruthCard(r){
+  // ---------- Copy / Print helpers ----------
+  function buildCopyText(r) {
+    const statusLine = `Status: ${titleCase(r.status)} | Score: ${r.truth_score}/100 | Confidence: ${titleCase(r.confidence)}`;
+    const topSources = (r.sources || []).slice(0, 3).map((s) => `- ${s.title || s.url}: ${s.url}`).join("\n");
+    return [
+      `TruthLayer`,
+      `Claim: ${r.claim}`,
+      statusLine,
+      ``,
+      `Summary: ${r.summary}`,
+      ``,
+      `Sources:`,
+      topSources || "(none)"
+    ].join("\n");
+  }
+
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus("Copied Truth Card text.", "ok");
+    } catch {
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setStatus("Copied Truth Card text.", "ok");
+    }
+  }
+
+  // ---------- Truth Card rendering ----------
+  function renderTruthCard(r) {
+    const statusClass = pillClassForStatus(r.status);
+
+    // supports/conflicts may be either strings or {snippet, source_id}
+    const fmtItem = (x) => {
+      if (typeof x === "string") return x;
+      if (x && typeof x === "object") return x.snippet || JSON.stringify(x);
+      return String(x);
+    };
+
+    const supportsHtml = (r.supports || []).slice(0, 4).map(x => `<li>${escapeHTML(fmtItem(x))}</li>`).join("");
+    const conflictsHtml = (r.conflicts || []).slice(0, 4).map(x => `<li>${escapeHTML(fmtItem(x))}</li>`).join("");
+
+    const sourcesHtml = (r.sources || []).slice(0, 3).map(s => `
+      <a class="source" href="${escapeHTML(s.url)}" target="_blank" rel="noreferrer">
+        <div class="source__title">${escapeHTML(s.title || s.url)}</div>
+        <div class="source__url">${escapeHTML((s.publisher ? s.publisher + " • " : "") + s.url)}</div>
+      </a>
+    `).join("");
+
     resultMount.innerHTML = `
-      <section class="truthCard">
+      <section class="truthCard printKeep">
         <div class="truthCard__top">
           <div class="truthCard__kicker">Claim</div>
           <div class="truthCard__claim">“${escapeHTML(r.claim)}”</div>
 
           <div class="metaRow">
-            <div class="pill">Score: <b>${r.score}</b>/100</div>
-            <div class="pill">Verdict: <b>${escapeHTML(r.verdict)}</b></div>
-            <div class="pill">Confidence: <b>${escapeHTML(r.confidence)}</b></div>
+            <div class="pill">Score: <b>${r.truth_score}</b>/100</div>
+            <div class="pill ${statusClass}">Status: <b>${escapeHTML(titleCase(r.status))}</b></div>
+            <div class="pill">Confidence: <b>${escapeHTML(titleCase(r.confidence))}</b></div>
             <div class="pill">Checked: <b>${new Date(r.checkedAtISO).toLocaleString()}</b></div>
           </div>
         </div>
 
         <div class="truthCard__body">
+          <div class="cardActions">
+            <button id="copyBtn" class="btn btn--ghost btn--mini">Copy</button>
+            <button id="printBtn" class="btn btn--ghost btn--mini">Print / PDF</button>
+          </div>
+
           <div>
             <div class="sectionTitle">What we found</div>
-            <div class="summary">${escapeHTML(r.summary)}</div>
+            <div class="summary">${escapeHTML(r.summary || "")}</div>
             <div class="tiny muted" style="margin-top:8px;">${escapeHTML(r.methodNote || "")}</div>
           </div>
 
@@ -228,14 +303,14 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="box">
               <div class="sectionTitle">Supports</div>
               <ul class="ul">
-                ${(r.supports || []).map(x => `<li>${escapeHTML(x)}</li>`).join("")}
+                ${supportsHtml || "<li>No strong supporting evidence found in retrieved sources.</li>"}
               </ul>
             </div>
 
             <div class="box">
               <div class="sectionTitle">Conflicts / caveats</div>
               <ul class="ul">
-                ${(r.conflicts || []).map(x => `<li>${escapeHTML(x)}</li>`).join("")}
+                ${conflictsHtml || "<li>No strong conflicting evidence found in retrieved sources.</li>"}
               </ul>
             </div>
           </div>
@@ -243,57 +318,58 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="box">
             <div class="sectionTitle">Sources</div>
             <div class="sources">
-              ${(r.sources || []).map(s => `
-                <a class="source" href="${escapeHTML(s.url)}" target="_blank" rel="noreferrer">
-                  <div class="source__title">${escapeHTML(s.title)}</div>
-                  <div class="source__url">${escapeHTML(s.url)}</div>
-                </a>
-              `).join("")}
+              ${sourcesHtml || "<div class='tiny muted'>No sources returned.</div>"}
             </div>
             <div class="tiny muted" style="margin-top:10px;">
-              Sources open in a new tab to prevent embedded-page errors.
+              Tip: sources open in a new tab to prevent embedded-page errors.
             </div>
           </div>
         </div>
       </section>
     `;
+
+    // wire actions
+    const copyBtn = document.getElementById("copyBtn");
+    const printBtn = document.getElementById("printBtn");
+    if (copyBtn) copyBtn.addEventListener("click", () => copyToClipboard(buildCopyText(r)));
+    if (printBtn) printBtn.addEventListener("click", () => window.print());
   }
 
-  /* ---------- events ---------- */
+  // ---------- events ----------
   verifyBtn.addEventListener("click", async () => {
-    console.log("[TruthLayer] Verify clicked ✅");
-
     const claim = String(claimInput.value || "").trim();
-    if(!claim){
+    if (!claim) {
       setStatus("Enter a claim first.", "error");
       return;
     }
 
     const remaining = renderLimit();
-    if(remaining <= 0){
+    if (remaining <= 0) {
       setStatus("Daily free limit reached.", "error");
       setPricingMsg("Daily free limit reached. Upgrade to Pro for higher limits.", "error");
       window.location.hash = "#pricing";
       return;
     }
 
+    // consume a use
     const st = getLimitState();
     setUsed((st.used || 0) + 1);
 
-    setStatus("Analyzing… building Truth Card…", "");
+    setStatus("Retrieving sources… analyzing… building Truth Card…", "");
     setPricingMsg("", "");
     verifyBtn.disabled = true;
 
-    try{
-      const r = await verifyClaim(claim);
+    try {
+      const raw = await verifyClaim(claim);
+      const r = normalizeResult(raw);
       renderTruthCard(r);
       saveToHistory(r);
       setStatus("Truth Card generated.", "ok");
       window.scrollTo({ top: resultMount.offsetTop - 80, behavior: "smooth" });
-    }catch(e){
+    } catch (e) {
       console.error(e);
-      setStatus("Something went wrong while verifying.", "error");
-    }finally{
+      setStatus(`Verification failed: ${String(e?.message || e)}`, "error");
+    } finally {
       verifyBtn.disabled = false;
     }
   });
@@ -313,76 +389,39 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Pro email capture (if pricing exists)
-  try{
-    const saved = localStorage.getItem(PRO_EMAIL_KEY);
-    if(saved && proEmail) proEmail.value = saved;
-  }catch{}
+  // Example buttons: fill claim box + verify
+  document.querySelectorAll(".exampleBtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const c = btn.getAttribute("data-claim") || "";
+      claimInput.value = c;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setStatus("Example loaded. Click Verify.", "ok");
+    });
+  });
 
-  if(proBtn){
+  // Pro email capture
+  try {
+    const saved = localStorage.getItem(PRO_EMAIL_KEY);
+    if (saved && proEmail) proEmail.value = saved;
+  } catch {}
+
+  if (proBtn) {
     proBtn.addEventListener("click", () => {
       const email = (proEmail?.value || "").trim();
-      if(!isValidEmail(email)){
-        if(proMsg){
+      if (!isValidEmail(email)) {
+        if (proMsg) {
           proMsg.textContent = "Enter a valid email to get early access.";
           proMsg.style.color = "rgba(255, 170, 170, 0.95)";
         }
         return;
       }
       localStorage.setItem(PRO_EMAIL_KEY, email);
-      if(proMsg){
+      if (proMsg) {
         proMsg.textContent = "Saved. You’re on the early access list.";
         proMsg.style.color = "rgba(180, 255, 220, 0.95)";
       }
     });
   }
-
-  // Example buttons (safe)
-  document.querySelectorAll(".exampleBtn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const idx = Number(btn.getAttribute("data-example"));
-      const EXAMPLES = [
-        {
-          claim: "The Great Wall of China is visible from space with the naked eye.",
-          score: 25, verdict: "Mostly False", confidence: "High",
-          summary: "Astronaut accounts and major space agencies generally report it is not easily visible to the naked eye from low Earth orbit; the claim is often repeated but overstated.",
-          supports: ["Visibility depends on contrast, lighting, and atmosphere.", "Many human structures are hard to see unaided from orbit."],
-          conflicts: ["Popular claim is not consistently supported by astronaut reports.", "Photos from orbit do not prove naked-eye visibility."],
-          sources: [{title:"NASA (site)", url:"https://www.nasa.gov/"},{title:"ESA (site)", url:"https://www.esa.int/"}],
-          checkedAtISO: new Date().toISOString(),
-          methodNote: "Example output • Format matches real Truth Cards."
-        },
-        {
-          claim: "Humans use only 10% of their brain.",
-          score: 15, verdict: "False", confidence: "High",
-          summary: "Neuroscience evidence shows many brain regions have activity and function across daily life; the “10%” claim is a myth.",
-          supports: ["Brain imaging shows widespread activity.", "Damage to different areas impairs different functions."],
-          conflicts: ["Persistent myth with weak scientific support."],
-          sources: [{title:"NIH (site)", url:"https://www.nih.gov/"},{title:"Scientific American (site)", url:"https://www.scientificamerican.com/"}],
-          checkedAtISO: new Date().toISOString(),
-          methodNote: "Example output • Format matches real Truth Cards."
-        },
-        {
-          claim: "Vitamin C prevents the common cold.",
-          score: 45, verdict: "Mostly False", confidence: "Medium",
-          summary: "Evidence suggests vitamin C does not reliably prevent colds for most people, though it may slightly reduce duration in some cases and may help under extreme physical stress.",
-          supports: ["Some studies show modest reduction in duration.", "Certain high-stress groups may benefit more."],
-          conflicts: ["Prevention effects are inconsistent for most people.", "Dose and study quality vary."],
-          sources: [{title:"Cochrane Library (site)", url:"https://www.cochranelibrary.com/"},{title:"CDC (site)", url:"https://www.cdc.gov/"}],
-          checkedAtISO: new Date().toISOString(),
-          methodNote: "Example output • Format matches real Truth Cards."
-        }
-      ];
-
-      const r = EXAMPLES[idx];
-      if (!r) return;
-      renderTruthCard(r);
-      saveToHistory(r);
-      setStatus("Loaded example Truth Card.", "ok");
-      setPricingMsg("", "");
-      window.scrollTo({ top: resultMount.offsetTop - 80, behavior: "smooth" });
-    });
-  });
 
   // init
   renderLimit();
