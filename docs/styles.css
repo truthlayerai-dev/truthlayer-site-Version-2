@@ -1,9 +1,7 @@
-/* ========= TruthLayer — Screenshot-friendly Truth Cards ========= */
-
-/* CHANGE THIS to match your logo color exactly */
 :root{
-  --accent: 0, 229, 255;    /* cyan-ish */
-  --accent2: 120, 255, 214; /* mint-ish */
+  /* Change this to match your logo exactly */
+  --accent: 0, 229, 255;
+  --accent2: 120, 255, 214;
 
   --bg: 10, 10, 14;
   --text: 245, 245, 250;
@@ -30,10 +28,9 @@ b{ font-weight: 650; }
   width: min(980px, calc(100% - 32px));
   margin: 0 auto;
 }
-
 .spacer{ margin-top: 18px; }
 
-/* Top bar */
+/* Topbar */
 .topbar{
   position: sticky;
   top: 0;
@@ -64,7 +61,7 @@ b{ font-weight: 650; }
   box-shadow: 0 0 0 1px rgba(var(--accent),0.08) inset;
 }
 .brand__text{ display: grid; line-height: 1.05; }
-.brand__name{ font-weight: 750; letter-spacing: -0.2px; }
+.brand__name{ font-weight: 780; letter-spacing: -0.2px; }
 .brand__tag{ font-size: 12px; color: rgba(var(--muted), 0.95); }
 .nav{ display: flex; gap: 16px; }
 .nav__link{
@@ -97,27 +94,14 @@ b{ font-weight: 650; }
   justify-content: flex-end;
 }
 
-.kicker{
-  font-size: 12px;
-  color: rgba(var(--muted), 0.95);
-}
-.title{
-  margin: 6px 0 0;
-  font-size: clamp(26px, 3.2vw, 38px);
-  letter-spacing: -0.6px;
-}
-.subtitle{
-  margin: 10px 0 0;
-  color: rgba(var(--text), 0.75);
-  line-height: 1.55;
-}
+/* Text */
+.kicker{ font-size: 12px; color: rgba(var(--muted), 0.95); }
+.title{ margin: 6px 0 0; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.6px; }
+.subtitle{ margin: 10px 0 0; color: rgba(var(--text), 0.75); line-height: 1.55; }
 
 /* Input */
 .field{ margin-top: 18px; }
-.label{
-  font-size: 12px;
-  color: rgba(var(--muted), 0.95);
-}
+.label{ font-size: 12px; color: rgba(var(--muted), 0.95); }
 .textarea{
   width: 100%;
   margin-top: 8px;
@@ -141,14 +125,7 @@ b{ font-weight: 650; }
   flex-wrap: wrap;
   margin-top: 8px;
 }
-.hint{
-  font-size: 12px;
-  color: rgba(var(--muted), 0.92);
-}
-.microHint{
-  font-size: 12px;
-  color: rgba(var(--muted), 0.92);
-}
+.hint, .microHint{ font-size: 12px; color: rgba(var(--muted), 0.92); }
 
 /* Controls */
 .controls{
@@ -166,10 +143,11 @@ b{ font-weight: 650; }
   background: rgba(255,255,255,0.03);
 }
 .limit__line{ font-size: 14px; color: rgba(var(--text), 0.82); }
-.limit__num{ font-weight: 780; color: rgba(var(--text), 0.96); }
+.limit__num{ font-weight: 820; color: rgba(var(--text), 0.96); }
 .limit__sub{ margin-top: 2px; font-size: 12px; color: rgba(var(--muted), 0.92); }
 
 .buttons{ display: flex; gap: 10px; align-items: center; }
+
 .btn{
   border-radius: 18px;
   padding: 12px 14px;
@@ -177,11 +155,12 @@ b{ font-weight: 650; }
   background: rgba(255,255,255,0.06);
   color: rgba(var(--text), 0.92);
   cursor: pointer;
-  font-weight: 700;
+  font-weight: 780;
   transition: 140ms ease;
 }
 .btn:hover{ background: rgba(255,255,255,0.10); }
 .btn:disabled{ opacity: 0.55; cursor: not-allowed; }
+
 .btn--primary{
   background: rgba(var(--accent), 0.12);
   border-color: rgba(var(--accent), 0.22);
@@ -191,7 +170,9 @@ b{ font-weight: 650; }
 .btn--ghost{ background: rgba(0,0,0,0.20); }
 .btn--small{ padding: 10px 12px; font-size: 13px; }
 .btn--full{ width: 100%; margin-top: 10px; }
+.btn--mini{ padding: 10px 12px; font-size: 13px; }
 
+/* Status text */
 .status{
   padding: 0 20px 10px;
   min-height: 18px;
@@ -214,18 +195,9 @@ b{ font-weight: 650; }
   border-bottom: 1px solid rgba(var(--border), 0.10);
   background: rgba(0,0,0,0.22);
 }
-.truthCard__kicker{
-  font-size: 12px;
-  color: rgba(var(--muted), 0.95);
-}
-.truthCard__claim{
-  margin-top: 6px;
-  font-size: 18px;
-  font-weight: 780;
-  line-height: 1.35;
-}
+.truthCard__kicker{ font-size: 12px; color: rgba(var(--muted), 0.95); }
+.truthCard__claim{ margin-top: 6px; font-size: 18px; font-weight: 820; line-height: 1.35; }
 
-/* Pills */
 .metaRow{
   margin-top: 14px;
   display: flex;
@@ -241,31 +213,20 @@ b{ font-weight: 650; }
   font-size: 13px;
   color: rgba(var(--text), 0.86);
 }
-.pill b{ font-weight: 800; }
+.pill b{ font-weight: 850; }
 
-/* Status color pills */
+/* status pills */
 .pill--supported{ border-color: rgba(120,255,214,0.22); background: rgba(120,255,214,0.10); }
 .pill--refuted{ border-color: rgba(255,170,170,0.22); background: rgba(255,170,170,0.10); }
 .pill--mixed{ border-color: rgba(255,220,140,0.22); background: rgba(255,220,140,0.10); }
 .pill--unknown{ border-color: rgba(180,180,200,0.22); background: rgba(180,180,200,0.08); }
 
 .truthCard__body{ padding: 18px 20px; display: grid; gap: 16px; }
-.sectionTitle{ font-weight: 780; }
-.summary{ color: rgba(var(--text), 0.80); line-height: 1.55; }
+.sectionTitle{ font-weight: 820; }
+.summary{ color: rgba(var(--text), 0.82); line-height: 1.55; }
 
-/* Buttons row inside Truth Card */
-.cardActions{
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.btn--mini{
-  padding: 10px 12px;
-  font-size: 13px;
-}
+.cardActions{ display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
-/* Columns */
 .cols{
   display: grid;
   grid-template-columns: 1fr;
@@ -283,16 +244,12 @@ b{ font-weight: 650; }
 .ul{
   margin: 10px 0 0;
   padding-left: 18px;
-  color: rgba(var(--text), 0.80);
+  color: rgba(var(--text), 0.82);
 }
 .ul li{ margin: 6px 0; }
 
-/* Sources */
-.sources{
-  display: grid;
-  gap: 10px;
-  margin-top: 10px;
-}
+/* sources */
+.sources{ display: grid; gap: 10px; margin-top: 10px; }
 .source{
   display: block;
   border-radius: 16px;
@@ -302,7 +259,7 @@ b{ font-weight: 650; }
   transition: 140ms ease;
 }
 .source:hover{ border-color: rgba(var(--border), 0.18); }
-.source__title{ font-weight: 700; }
+.source__title{ font-weight: 780; }
 .source__url{
   margin-top: 4px;
   font-size: 12px;
@@ -314,7 +271,7 @@ b{ font-weight: 650; }
 .h2{ margin: 0; font-size: 18px; letter-spacing: -0.2px; }
 .muted{ color: rgba(var(--muted), 0.95); font-size: 13px; }
 
-/* How / Examples / Pricing */
+/* grid sections */
 .grid{
   padding: 0 20px 18px;
   display: grid;
@@ -322,16 +279,16 @@ b{ font-weight: 650; }
   gap: 12px;
 }
 @media (min-width: 820px){ .grid{ grid-template-columns: 1fr 1fr; } }
-
 .card{
   border-radius: 18px;
   border: 1px solid rgba(var(--border), 0.10);
   background: rgba(255,255,255,0.04);
   padding: 14px;
 }
-.card__title{ font-weight: 780; }
+.card__title{ font-weight: 820; }
 .card__text{ margin-top: 6px; color: rgba(var(--text), 0.74); }
 
+/* examples */
 .examples{
   padding: 0 20px 18px;
   display: grid;
@@ -343,21 +300,20 @@ b{ font-weight: 650; }
   border: 1px solid rgba(var(--border), 0.10);
   background: rgba(0,0,0,0.22);
   padding: 12px 14px;
-  color: rgba(var(--text), 0.90);
+  color: rgba(var(--text), 0.92);
   cursor: pointer;
   transition: 140ms ease;
 }
 .exampleBtn:hover{ border-color: rgba(var(--border), 0.18); }
 
+/* pricing */
 .pricing{
   padding: 0 20px 18px;
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
 }
-@media (min-width: 820px){
-  .pricing{ grid-template-columns: 1fr 1fr 1fr; }
-}
+@media (min-width: 820px){ .pricing{ grid-template-columns: 1fr 1fr 1fr; } }
 .priceCard{
   border-radius: 18px;
   border: 1px solid rgba(var(--border), 0.10);
@@ -370,11 +326,11 @@ b{ font-weight: 650; }
   box-shadow: 0 16px 55px rgba(0,0,0,0.35);
 }
 .priceCard__tier{ color: rgba(var(--muted), 0.95); font-size: 13px; }
-.priceCard__price{ margin-top: 6px; font-size: 28px; font-weight: 820; letter-spacing: -0.4px; }
-.list{ margin: 12px 0 0; padding-left: 18px; color: rgba(var(--text), 0.80); }
+.priceCard__price{ margin-top: 6px; font-size: 28px; font-weight: 900; letter-spacing: -0.4px; }
+.list{ margin: 12px 0 0; padding-left: 18px; color: rgba(var(--text), 0.82); }
 .list li{ margin: 6px 0; }
 
-/* Pro email capture */
+/* pro email */
 .input{
   width: 100%;
   margin-top: 8px;
@@ -397,7 +353,7 @@ b{ font-weight: 650; }
   padding: 14px;
 }
 
-/* History */
+/* history */
 .history{
   padding: 0 20px 10px;
   display: grid;
@@ -412,15 +368,13 @@ b{ font-weight: 650; }
   transition: 140ms ease;
 }
 .historyItem:hover{ border-color: rgba(var(--border), 0.18); }
-.historyItem__claim{ font-weight: 700; line-height: 1.35; }
+.historyItem__claim{ font-weight: 780; line-height: 1.35; }
 .historyItem__meta{ margin-top: 4px; font-size: 12px; color: rgba(var(--muted), 0.95); }
 
-.footer{
-  margin: 22px 0 40px;
-  text-align: center;
-}
+/* footer */
+.footer{ margin: 22px 0 40px; text-align: center; }
 
-/* Print: make Truth Card export clean */
+/* print */
 @media print{
   body{ background: white; color: black; }
   .topbar, .panel.hero, #how, #examples, #pricing, .footer, .panel:not(.printKeep){ display: none !important; }
